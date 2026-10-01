@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 60 9% 97%;
+    --foreground: 168 62% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 168 62% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 168 62% 12%;
+    --primary: 135 100% 25%;
+    --primary-foreground: 60 9% 97%;
+    --secondary: 150 20% 93%;
+    --secondary-foreground: 168 62% 12%;
+    --muted: 150 14% 93%;
+    --muted-foreground: 170 8% 46%;
+    --accent: 133 29% 64%;
+    --accent-foreground: 168 62% 12%;
+    --destructive: 4 72% 46%;
+    --destructive-foreground: 60 9% 97%;
+    --border: 150 12% 87%;
+    --input: 150 12% 87%;
+    --ring: 135 100% 25%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'tnum' 1, 'cv05' 1;
+  }
+  .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+  .font-mono2 { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  ::selection { background: #09352e; color: #f7f7f0; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #85c093; border-radius: 8px; }
+}
+
+@layer utilities {
+  .hairline { box-shadow: inset 0 0 0 1px hsl(var(--border)); }
+  .kicker {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+}

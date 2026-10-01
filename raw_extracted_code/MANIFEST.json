@@ -1,0 +1,24 @@
+{
+  "source": "/mnt/data/Pasted text.txt",
+  "code_blocks_extracted": 18,
+  "files": [
+    "src/store/crm.tsx",
+    "src/pages/Login.tsx",
+    "src/components/GlobalSearch.tsx",
+    "src/components/NotificationsPanel.tsx",
+    "src/pages/details/shared.tsx",
+    "src/pages/details/LeadDetail.tsx",
+    "src/pages/details/AccountDetail.tsx",
+    "src/pages/details/CustomerDetail.tsx",
+    "src/pages/details/OpportunityDetail.tsx",
+    "src/pages/AuditLogs.tsx",
+    "src/App.tsx",
+    "src/pages/Leads.tsx",
+    "src/pages/Accounts.tsx",
+    "src/pages/Opportunities.tsx",
+    "src/pages/Masters.tsx",
+    "extracted_16.tsx",
+    "src/pages/Reports.tsx",
+    "src/store/crm.tsx"
+  ]
+}

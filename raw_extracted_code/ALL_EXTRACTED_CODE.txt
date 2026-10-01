@@ -1,0 +1,1737 @@
+================================================================================
+FILE 1: src/store/crm.tsx   — session, RBAC, mutable data, audit, notifications,
+LANGUAGE: tsx
+================================================================================
+// src/store/crm.tsx   — session, RBAC, mutable data, audit, notifications,
+// lead conversion, GPS check-in/out, visit recording (already written to disk)
+
+================================================================================
+FILE 2: src/pages/Login.tsx
+LANGUAGE: tsx
+================================================================================
+// src/pages/Login.tsx
+import { useState } from 'react';
+import { Compass, Lock, Mail, LogIn, ShieldCheck, Building2, Users, MapPin } from 'lucide-react';
+import { useCRM } from '@/store/crm';
+import type { Role } from '@/store/crm';
+
+const QUICK: { role: Role; icon: React.ElementType; email: string; password: string; name: string; blurb: string }[] = [
+  { role: 'Super Admin', icon: ShieldCheck, email: 'admin@crm360.io', password: 'admin123', name: 'Aditya Verma', blurb: 'Full platform control · all companies · audit logs' },
+  { role: 'Company Admin', icon: Building2, email: 'arjun.mehta@apex.io', password: 'demo123', name: 'Arjun Mehta', blurb: 'Apex Industries · employees, customers, audit' },
+  { role: 'Manager', icon: Users, email: 'priya.nair@apex.io', password: 'demo123', name: 'Priya Nair', blurb: 'Team pipeline · live tracking · visits · reports' },
+  { role: 'Employee', icon: MapPin, email: 'rohan.k@apex.io', password: 'demo123', name: 'Rohan Kulkarni', blurb: 'Own leads & tasks · check-in / visits' },
+];
+
+export default function Login() {
+  const { login } = useCRM();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = () => setError(login(email, password));
+
+  return (
+    <div className="flex min-h-screen">
+      <div className="hidden w-[420px] flex-col justify-between bg-[#0c231e] p-10 text-[#cfe3d6] lg:flex">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-9 items-center justify-center rounded-md bg-[#85c093]">
+            <Compass className="size-5 text-[#0c231e]" strokeWidth={2.4} />
+          </div>
+          <div>
+            <div className="font-display text-lg font-semibold tracking-tight text-white">CRM 360</div>
+            <div className="kicker text-[#6f9480]">Sales + Geo Tracking</div>
+          </div>
+        </div>
+        <div>
+          <h2 className="font-display text-[28px] font-semibold leading-tight text-white">One workspace for<br />sales, customers<br />& field teams.</h2>
+          <ul className="mt-6 space-y-2 font-mono2 text-[11px] text-[#8fb29e]">
+            <li>— Lead → Customer → Account conversion</li>
+            <li>— GPS-verified check-in & customer visits</li>
+            <li>— Role-based access for 4 personas</li>
+          </ul>
+        </div>
+        <div className="kicker text-[#5d8171]">SRS-aligned · JWT/API-ready</div>
+      </div>
+
+      <div className="flex flex-1 items-center justify-center px-6 py-10">
+        <div className="w-full max-w-[400px]">
+          <div className="mb-8">
+            <div className="kicker mb-2 text-muted-foreground">Welcome back</div>
+            <h1 className="font-display text-[26px] font-semibold tracking-tight">Sign in to CRM 360</h1>
+            <p className="mt-1.5 text-[13px] text-muted-foreground">Demo build — FastAPI + JWT can be wired into <span className="font-mono2 text-[11px]">store.login()</span> without UI changes.</p>
+          </div>
+
+          <label className="kicker text-muted-foreground">Email</label>
+          <div className="relative mt-1.5 mb-4">
+            <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
+              placeholder="you@company.com" className="h-10 w-full rounded-md border border-input bg-card pl-9 pr-3 text-[13.5px] outline-none focus:ring-2 focus:ring-ring/25" />
+          </div>
+          <label className="kicker text-muted-foreground">Password</label>
+          <div className="relative mt-1.5">
+            <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
+              placeholder="••••••••" className="h-10 w-full rounded-md border border-input bg-card pl-9 pr-3 text-[13.5px] outline-none focus:ring-2 focus:ring-ring/25" />
+          </div>
+          <div className="mt-1.5 text-right"><button className="font-mono2 text-[10.5px] text-muted-foreground hover:text-foreground">Forgot password?</button></div>
+
+          {error && <div className="mt-3 rounded-md border border-[#f0cdc4] bg-[#fbe9e6] px-3 py-2 text-[12px] text-[#b03a26]">{error}</div>}
+
+          <button onClick={submit} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#007f24] text-[13.5px] font-semibold text-white transition-colors hover:bg-[#0a6b20]">
+            <LogIn className="size-4" /> Login
+          </button>
+
+          <div className="kicker mt-8 mb-2 text-muted-foreground">One-click demo roles</div>
+          <div className="space-y-1.5">
+            {QUICK.map(q => (
+              <button key={q.role} onClick={() => setError(login(q.email, q.password))}
+                className="flex w-full items-center gap-3 rounded-md border border-border bg-card px-3 py-2.5 text-left transition-colors hover:border-[#85c093]">
+                <q.icon className="size-4 shrink-0 text-muted-foreground" />
+                <span className="min-w-0">
+                  <span className="block text-[12.5px] font-semibold">{q.role} <span className="font-normal text-muted-foreground">· {q.name}</span></span>
+                  <span className="block truncate font-mono2 text-[10px] text-muted-foreground">{q.blurb}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE 3: src/components/GlobalSearch.tsx — Ctrl+K command palette over live store data
+LANGUAGE: tsx
+================================================================================
+// src/components/GlobalSearch.tsx — Ctrl+K command palette over live store data
+import { useEffect, useRef, useState } from 'react';
+import { Search, Funnel, Building2, Contact2, HandCoins, Users, CheckSquare, CalendarDays, ListChecks } from 'lucide-react';
+import { useCRM } from '@/store/crm';
+import { activities, tasks, meetings } from '@/data/mock';
+
+interface Item { id?: string; label: string; sub: string }
+interface Group { label: string; page: string; icon: React.ElementType; items: Item[] }
+
+export default function GlobalSearch({ open, onClose, onNavigate }: {
+  open: boolean; onClose: () => void; onNavigate: (page: string, id?: string) => void;
+}) {
+  const crm = useCRM();
+  const [q, setQ] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (open) { setQ(''); setTimeout(() => inputRef.current?.focus(), 0); } }, [open]);
+  if (!open) return null;
+
+  const ql = q.trim().toLowerCase();
+  const has = (s: string) => s.toLowerCase().includes(ql);
+
+  const groups: Group[] = [
+    { label: 'Leads', page: 'leads', icon: Funnel, items: ql ? crm.leads.filter(l => has(l.name) || has(l.company)).slice(0, 5).map(l => ({ id: l.id, label: l.name, sub: `${l.company} · ${l.status}` })) : [] },
+    { label: 'Accounts', page: 'accounts', icon: Building2, items: ql ? crm.accounts.filter(a => has(a.name)).slice(0, 5).map(a => ({ id: a.id, label: a.name, sub: `${a.industry} · ${a.city}` })) : [] },
+    { label: 'Customers', page: 'customers', icon: Contact2, items: ql ? crm.customers.filter(c => has(c.name)).slice(0, 5).map(c => ({ id: c.id, label: c.name, sub: `${c.city} · ${c.status}` })) : [] },
+    { label: 'Contacts', page: 'contacts', icon: Users, items: ql ? crm.contacts.filter(c => has(c.name) || has(c.account)).slice(0, 5).map(c => ({ label: c.name, sub: `${c.title} · ${c.account}` })) : [] },
+    { label: 'Opportunities', page: 'opportunities', icon: HandCoins, items: ql ? crm.opportunities.filter(o => has(o.name) || has(o.account)).slice(0, 5).map(o => ({ id: o.id, label: o.name, sub: `${o.stage} · ${o.code}` })) : [] },
+    { label: 'Tasks', page: 'tasks', icon: CheckSquare, items: ql ? tasks.filter(t => has(t.title)).slice(0, 4).map(t => ({ label: t.title, sub: `${t.assignee} · ${t.status}` })) : [] },
+    { label: 'Meetings', page: 'meetings', icon: CalendarDays, items: ql ? meetings.filter(m => has(m.title) || has(m.account)).slice(0, 4).map(m => ({ label: m.title, sub: `${m.account} · ${m.date}` })) : [] },
+    { label: 'Activities', page: 'activities', icon: ListChecks, items: ql ? activities.filter(a => has(a.subject)).slice(0, 4).map(a => ({ label: a.subject, sub: `${a.type} · ${a.status}` })) : [] },
+  ];
+
+  const visible = groups.filter(g => g.items.length > 0);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[#0c231e]/40 backdrop-blur-[2px]" onClick={onClose}>
+      <div className="mx-auto mt-[14vh] w-[min(580px,92vw)] overflow-hidden rounded-xl border border-border bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-2.5 border-b border-border px-4">
+          <Search className="size-4 text-muted-foreground" />
+          <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)}
+            placeholder="Search leads, accounts, customers, opportunities…"
+            className="h-12 w-full bg-transparent text-[13.5px] outline-none" />
+          <kbd className="kicker rounded border border-border px-1.5 py-0.5 text-muted-foreground">ESC</kbd>
+        </div>
+        <div className="max-h-[46vh] overflow-y-auto p-2">
+          {!ql && <div className="p-6 text-center font-mono2 text-[11px] leading-relaxed text-muted-foreground">Type to search across CRM 360.<br />Press <b>Ctrl K</b> anywhere to reopen.</div>}
+          {ql && visible.length === 0 && <div className="p-6 text-center font-mono2 text-[11px] text-muted-foreground">No results for “{q}”.</div>}
+          {visible.map(g => (
+            <div key={g.label} className="mb-1">
+              <div className="kicker px-2 py-1.5 text-muted-foreground">{g.label}</div>
+              {g.items.map((it, i) => (
+                <button key={i} onClick={() => { onNavigate(g.page, it.id); onClose(); }}
+                  className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-[#f4f7f2]">
+                  <g.icon className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate text-[12.5px] font-medium">{it.label}</span>
+                  <span className="ml-auto truncate pl-3 font-mono2 text-[10.5px] text-muted-foreground">{it.sub}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE 4: src/components/NotificationsPanel.tsx
+LANGUAGE: tsx
+================================================================================
+// src/components/NotificationsPanel.tsx
+import { CheckSquare, CalendarDays, AlertTriangle, MapPin, Funnel, ShieldCheck } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useCRM } from '@/store/crm';
+import type { NotifKind } from '@/store/crm';
+
+const ICONS: Record<NotifKind, LucideIcon> = {
+  task: CheckSquare, meeting: CalendarDays, alert: AlertTriangle,
+  gps: MapPin, lead: Funnel, audit: ShieldCheck,
+};
+
+export default function NotificationsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { notifications, markAllRead } = useCRM();
+  if (!open) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-30" onClick={onClose} />
+      <div className="fixed right-4 top-16 z-40 w-[360px] overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="font-display text-[14px] font-semibold">Notifications</div>
+          <button onClick={markAllRead} className="font-mono2 text-[10.5px] font-medium text-[#007f24] hover:underline">Mark all read</button>
+        </div>
+        <div className="max-h-[60vh] overflow-y-auto">
+          {notifications.length === 0 && <div className="p-6 text-center font-mono2 text-[11px] text-muted-foreground">No notifications.</div>}
+          {notifications.map(n => {
+            const Icon = ICONS[n.kind];
+            return (
+              <div key={n.id} className={cn('flex gap-3 border-b border-border/60 px-4 py-3 last:border-0', !n.read && 'bg-[#f2f7f0]')}>
+                <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-md', n.read ? 'bg-secondary text-muted-foreground' : 'bg-[#e3f0e7] text-[#0f6b2e]')}>
+                  <Icon className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[12.5px] font-semibold">{n.title}</div>
+                  <div className="truncate text-[11.5px] text-muted-foreground">{n.body}</div>
+                  <div className="kicker mt-1 text-muted-foreground">{n.time}</div>
+                </div>
+                {!n.read && <span className="ml-auto mt-1.5 size-1.5 shrink-0 rounded-full bg-[#b03a26]" />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
+================================================================================
+FILE 5: src/pages/details/shared.tsx — small building blocks for detail/360 screens
+LANGUAGE: tsx
+================================================================================
+// src/pages/details/shared.tsx — small building blocks for detail/360 screens
+import type { ReactNode } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { StatusBadge } from '@/components/shared';
+import type { StatusBadge as _SB, Tone } from '@/components/shared'; // (type re-export kept minimal)
+import { cn } from '@/lib/utils';
+import type { ReactElement } from 'react';
+
+export function BackBar({ onBack, kicker, title, sub, badges, actions }: {
+  onBack: () => void; kicker: string; title: string; sub?: string;
+  badges?: ReactElement[]; actions?: ReactNode;
+}) {
+  return (
+    <div className="pb-5 border-b border-border">
+      <button onClick={onBack} className="mb-3 inline-flex items-center gap-1.5 font-mono2 text-[11px] text-muted-foreground transition-colors hover:text-foreground">
+        <ArrowLeft className="size-3.5" /> Back
+      </button>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <div className="kicker mb-1.5 text-muted-foreground">{kicker}</div>
+          <h1 className="font-display text-[24px] leading-none font-semibold tracking-tight">{title}</h1>
+          {sub && <p className="mt-1.5 text-[12.5px] text-muted-foreground">{sub}</p>}
+          {badges && <div className="mt-2.5 flex flex-wrap items-center gap-1.5">{badges}</div>}
+        </div>
+        <div className="flex items-center gap-2">{actions}</div>
+      </div>
+    </div>
+  );
+}
+
+export function DetailTabs<T extends string>({ tabs, active, onChange }: {
+  tabs: { id: T; label: string; count?: number }[]; active: T; onChange: (t: T) => void;
+}) {
+  return (
+    <div className="flex gap-1 border-b border-border">
+      {tabs.map(t => (
+        <button key={t.id} onClick={() => onChange(t.id)}
+          className={cn('-mb-px border-b-2 px-3 py-2 text-[12.5px] font-medium transition-colors',
+            active === t.id ? 'border-[#007f24] text-[#007f24]' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+          {t.label}
+          {typeof t.count === 'number' && <span className="ml-1.5 font-mono2 text-[10px] text-muted-foreground">{t.count}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function Field({ label, children }: { label: string; children?: ReactNode }) {
+  return (
+    <div>
+      <div className="kicker text-muted-foreground">{label}</div>
+      <div className="mt-1 text-[13px] font-medium">{children ?? <span className="text-muted-foreground">—</span>}</div>
+    </div>
+  );
+}
+
+export function EmptyRow({ text }: { text: string }) {
+  return <div className="rounded-lg border border-dashed border-border p-6 text-center font-mono2 text-[10.5px] text-muted-foreground">{text}</div>;
+}
+
+export { StatusBadge };
+export type { Tone };
+
+================================================================================
+FILE 6: src/pages/details/LeadDetail.tsx
+LANGUAGE: tsx
+================================================================================
+// src/pages/details/LeadDetail.tsx
+import { useState } from 'react';
+import { PageHeader, DataTable, StatusBadge, Mono } from '@/components/shared';
+import type { Tone } from '@/components/shared';
+import { BackBar, DetailTabs, Field, EmptyRow } from '@/pages/details/shared';
+import { useCRM } from '@/store/crm';
+import { employees, activities, fmtINR } from '@/data/mock';
+import type { LeadStatus, Customer, Account } from '@/data/mock';
+import { ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const stages: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Negotiation', 'Won', 'Lost'];
+const tone = (s: LeadStatus): Tone =>
+  s === 'Won' ? 'ink' : s === 'Lost' ? 'red' : s === 'New' ? 'sage' : s === 'Negotiation' ? 'amber' : s === 'Proposal Sent' ? 'blue' : 'green';
+
+export default function LeadDetail({ id, onBack, onNavigate }: {
+  id: string; onBack: () => void; onNavigate: (page: string, id?: string) => void;
+}) {
+  const crm = useCRM();
+  const lead = crm.leads.find(l => l.id === id);
+  const [tab, setTab] = useState<'overview' | 'history'>('overview');
+  const [showConvert, setShowConvert] = useState(false);
+  const [owner, setOwner] = useState(lead?.owner ?? '');
+  const [custStatus, setCustStatus] = useState<'Active' | 'Prospect'>('Active');
+  const [result, setResult] = useState<{ customer: Customer; account: Account } | null>(null);
+  const [done, setDone] = useState(false);
+
+  if (!lead) return <div className="space-y-4"><EmptyRow text="Lead not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-[#007f24]">← Back to Leads</button></div>;
+
+  const conv = crm.conversions.find(c => c.leadId === id);
+  const converted = !!conv || done;
+  const idx = stages.indexOf(lead.status);
+  const history = crm.audit.filter(a => a.record === lead.code);
+
+  return (
+    <div className="space-y-5">
+      <BackBar onBack={onBack} kicker={`Leads · ${lead.code}`} title={lead.name}
+        sub={`${lead.company} · via ${lead.source} · owned by ${lead.owner}`}
+        badges={[<StatusBadge key="s" label={lead.status} tone={tone(lead.status)} />, converted && <StatusBadge key="c" label="Converted" tone="ink" />]}
+        actions={!converted && (
+          <button onClick={() => setShowConvert(true)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#007f24] px-3 text-[12.5px] font-semibold text-white transition-colors hover:bg-[#0a6b20]">
+            Convert Lead
+          </button>
+        )} />
+
+      {/* lifecycle strip */}
+      <div className="flex items-center gap-1">
+        {stages.map((s, i) => (
+          <div key={s} className="flex flex-1 items-center gap-1">
+            <div className={cn('h-1.5 flex-1 rounded-full', i <= idx ? (lead.status === 'Lost' && i === idx ? 'bg-[#b03a26]' : 'bg-[#007f24]') : 'bg-border')} />
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-between font-mono2 text-[9.5px] uppercase tracking-wider text-muted-foreground">
+        <span>New</span><span>Won / Lost</span>
+      </div>
+
+      {result && (
+        <div className="rounded-lg border border-[#bcdcc6] bg-[#e3f0e7] px-4 py-3 text-[12.5px] text-[#0f6b2e]">
+          ✓ Lead converted — created <b>{result.customer.code}</b> (Customer) and <b>{result.account.name}</b> (Account).
+          <button onClick={() => onNavigate('customers', result.customer.id)} className="ml-3 font-semibold underline">View Customer</button>
+          <button onClick={() => onNavigate('accounts', result.account.id)} className="ml-2 font-semibold underline">View Account</button>
+        </div>
+      )}
+
+      <DetailTabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'history', label: 'History', count: history.length }]} active={tab} onChange={setTab} />
+
+      {tab === 'overview' && (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+              <Field label="Company">{lead.company}</Field>
+              <Field label="Phone"><Mono>{lead.phone}</Mono></Field>
+              <Field label="Source">{lead.source}</Field>
+              <Field label="Owner">{lead.owner}</Field>
+              <Field label="Created On"><Mono>{lead.createdOn}</Mono></Field>
+              <Field label="Est. Value"><span className="font-display font-semibold">{fmtINR(lead.value)}</span></Field>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="kicker mb-3 text-muted-foreground">Related Activities</div>
+            <div className="space-y-2.5">
+              {activities.filter(a => a.relatedTo === lead.company).map(a => (
+                <div key={a.id} className="flex items-center gap-2 text-[12px]">
+                  <StatusBadge label={a.type} tone="sage" />
+                  <span className="truncate">{a.subject}</span>
+                  <Mono className="ml-auto shrink-0 text-muted-foreground">{a.due.slice(5, 10)}</Mono>
+                </div>
+              ))}
+              {activities.filter(a => a.relatedTo === lead.company).length === 0 && <EmptyRow text="No activities yet." />}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'history' && (
+        history.length ? <DataTable head={['Time', 'User', 'Module', 'Action']} rows={history.map(h => [
+          <Mono className="text-muted-foreground">{h.time}</Mono>, h.user, h.module, h.action,
+        ])} /> : <EmptyRow text="No history recorded for this lead yet." />
+      )}
+
+      {/* Convert dialog */}
+      {showConvert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0c231e]/45 p-4" onClick={() => setShowConvert(false)}>
+          <div className="w-full max-w-[420px] rounded-xl border border-border bg-card p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="font-display text-[17px] font-semibold">Convert Lead</h3>
+            <p className="mt-1 text-[12.5px] text-muted-foreground">This will create a Customer, an Account and a conversion history entry. The lead will be marked Won.</p>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="kicker text-muted-foreground">Account / Customer Owner</label>
+                <select value={owner} onChange={e => setOwner(e.target.value)} className="mt-1.5 h-9 w-full rounded-md border border-input bg-card px-2 text-[13px]">
+                  {employees.map(e => <option key={e.id} value={e.name}>{e.name} · {e.designation}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="kicker text-muted-foreground">Customer Status</label>
+                <select value={custStatus} onChange={e => setCustStatus(e.target.value as 'Active' | 'Prospect')} className="mt-1.5 h-9 w-full rounded-md border border-input bg-card px-2 text-[13px]">
+                  <option>Active</option><option>Prospect</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setShowConvert(false)} className="h-8 rounded-md border border-input px-3 text-[12.5px] font-medium">Cancel</button>
+              <button onClick={() => {
+                const r = crm.convertLead(id, owner, custStatus);
+                if (r) { setResult(r); setDone(true); }
+                setShowConvert(false);
+              }} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#007f24] px-3 text-[12.5px] font-semibold text-white hover:bg-[#0a6b20]">
+                <ArrowRight className="size-3.5" /> Convert Lead
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+================================================================================
+FILE 7: src/pages/details/AccountDetail.tsx — Account 360 hub
+LANGUAGE: tsx
+================================================================================
+// src/pages/details/AccountDetail.tsx — Account 360 hub
+import { useState } from 'react';
+import { DataTable, StatusBadge, Mono } from '@/components/shared';
+import { BackBar, DetailTabs, Field, EmptyRow } from '@/pages/details/shared';
+import { useCRM } from '@/store/crm';
+import { activities, tasks, meetings, fmtINR } from '@/data/mock';
+
+type Tab = 'contacts' | 'opportunities' | 'activities' | 'tasks' | 'meetings' | 'visits';
+
+export default function AccountDetail({ id, onBack }: { id: string; onBack: () => void }) {
+  const crm = useCRM();
+  const account = crm.accounts.find(a => a.id === id);
+  const [tab, setTab] = useState<Tab>('contacts');
+
+  if (!account) return <div className="space-y-4"><EmptyRow text="Account not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-[#007f24]">← Back to Accounts</button></div>;
+
+  const contacts = crm.contacts.filter(c => c.account === account.name);
+  const opps = crm.opportunities.filter(o => o.account === account.name);
+  const acts = activities.filter(a => a.relatedTo === account.name);
+  const tks = tasks.filter(t => t.related === account.name || opps.some(o => o.code === t.related));
+  const mts = meetings.filter(m => m.account === account.name);
+  const vs = crm.visits.filter(v => v.customer === account.name);
+
+  const tabs: { id: Tab; label: string; count: number }[] = [
+    { id: 'contacts', label: 'Contacts', count: contacts.length },
+    { id: 'opportunities', label: 'Opportunities', count: opps.length },
+    { id: 'activities', label: 'Activities', count: acts.length },
+    { id: 'tasks', label: 'Tasks', count: tks.length },
+    { id: 'meetings', label: 'Meetings', count: mts.length },
+    { id: 'visits', label: 'Visits', count: vs.length },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <BackBar onBack={onBack} kicker="Accounts · 360° View" title={account.name}
+        sub={`${account.industry} · ${account.city} · owned by ${account.owner}`}
+        badges={[<StatusBadge key="h" label={account.openOpps > 0 ? 'Engaged' : 'Quiet'} tone={account.openOpps > 0 ? 'green' : 'gray'} />]} />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-lg border border-border bg-card p-4"><div className="kicker text-muted-foreground">Lifetime Revenue</div><div className="font-display mt-1 text-[22px] font-semibold">{account.revenue ? fmtINR(account.revenue) : '—'}</div></div>
+        <div className="rounded-lg border border-border bg-card p-4"><div className="kicker text-muted-foreground">Open Opportunities</div><div className="font-display mt-1 text-[22px] font-semibold">{account.openOpps}</div></div>
+        <div className="rounded-lg border border-border bg-card p-4"><div className="kicker text-muted-foreground">Contacts</div><div className="font-display mt-1 text-[22px] font-semibold">{contacts.length || account.contacts}</div></div>
+      </div>
+
+      <DetailTabs tabs={tabs} active={tab} onChange={setTab} />
+      <div className="pt-1">
+        {tab === 'contacts' && (contacts.length ? <DataTable head={['Contact', 'Title', 'Email', 'Phone', 'Primary']} rows={contacts.map(c => [
+          <span className="font-medium">{c.name}</span>, c.title, <Mono className="text-muted-foreground">{c.email}</Mono>, <Mono className="text-muted-foreground">{c.phone}</Mono>,
+          <StatusBadge label={c.primary ? 'Primary' : '—'} tone={c.primary ? 'ink' : 'gray'} />,
+        ])} /> : <EmptyRow text="No contacts linked to this account." />)}
+
+        {tab === 'opportunities' && (opps.length ? <DataTable head={['Code', 'Opportunity', 'Stage', 'Probability', 'Expected Revenue', 'Close']} rows={opps.map(o => [
+          <Mono className="text-muted-foreground">{o.code}</Mono>, o.name, <StatusBadge label={o.stage} tone={o.stage === 'Won' ? 'ink' : o.stage === 'Lost' ? 'red' : 'blue'} />,
+          <Mono>{o.probability}%</Mono>, <span className="font-display font-semibold">{fmtINR(o.expectedRevenue)}</span>, <Mono className="text-muted-foreground">{o.closeDate}</Mono>,
+        ])} /> : <EmptyRow text="No opportunities for this account." />)}
+
+        {tab === 'activities' && (acts.length ? <DataTable head={['Type', 'Subject', 'Owner', 'Due', 'Status']} rows={acts.map(a => [
+          <StatusBadge label={a.type} tone="sage" />, a.subject, a.owner, <Mono className="text-muted-foreground">{a.due}</Mono>, <StatusBadge label={a.status} tone={a.status === 'Completed' ? 'green' : a.status === 'Cancelled' ? 'red' : 'amber'} />,
+        ])} /> : <EmptyRow text="No activities recorded." />)}
+
+        {tab === 'tasks' && (tks.length ? <DataTable head={['Task', 'Assignee', 'Priority', 'Status', 'Due']} rows={tks.map(t => [
+          t.title, t.assignee, <StatusBadge label={t.priority} tone={t.priority === 'Critical' ? 'red' : t.priority === 'High' ? 'amber' : 'gray'} />,
+          <StatusBadge label={t.status} tone={t.status === 'Completed' ? 'green' : t.status === 'Open' ? 'sage' : 'blue'} />, <Mono className="text-muted-foreground">{t.due}</Mono>,
+        ])} /> : <EmptyRow text="No tasks linked to this account." />)}
+
+        {tab === 'meetings' && (mts.length ? <DataTable head={['Meeting', 'Date', 'Time', 'Mode', 'Organizer', 'Status']} rows={mts.map(m => [
+          <span className="font-medium">{m.title}</span>, <Mono className="text-muted-foreground">{m.date}</Mono>, <Mono className="text-muted-foreground">{m.time}</Mono>,
+          m.mode, m.organizer, <StatusBadge label={m.status} tone={m.status === 'Completed' ? 'green' : m.status === 'Cancelled' ? 'red' : 'blue'} />,
+        ])} /> : <EmptyRow text="No meetings scheduled." />)}
+
+        {tab === 'visits' && (vs.length ? <DataTable head={['Employee', 'Check-In', 'Check-Out', 'Duration', 'Purpose', 'Outcome', 'Distance']} rows={vs.map(v => [
+          v.employee, <Mono className="text-muted-foreground">{v.checkIn}</Mono>, <Mono className="text-muted-foreground">{v.checkOut}</Mono>, <Mono>{v.durationMin} min</Mono>,
+          v.purpose, <span className="text-muted-foreground">{v.outcome}</span>, <Mono>{v.distanceKm} km</Mono>,
+        ])} /> : <EmptyRow text="No geo-verified visits yet." />)}
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE 8: src/pages/details/CustomerDetail.tsx — Customer 360 + Record Visit (GPS-gated)
+LANGUAGE: tsx
+================================================================================
+// src/pages/details/CustomerDetail.tsx — Customer 360 + Record Visit (GPS-gated)
+import { useState } from 'react';
+import { DataTable, StatusBadge, Mono } from '@/components/shared';
+import type { Tone } from '@/components/shared';
+import { BackBar, DetailTabs, Field, EmptyRow } from '@/pages/details/shared';
+import { useCRM } from '@/store/crm';
+import { activities, tasks, meetings, fmtINR } from '@/data/mock';
+import { MapPin } from 'lucide-react';
+
+type Tab = 'overview' | 'accounts' | 'contacts' | 'opportunities' | 'activities' | 'tasks' | 'meetings' | 'visits';
+const cusTone = (s: string): Tone => s === 'Active' ? 'green' : s === 'Prospect' ? 'blue' : 'gray';
+
+export default function CustomerDetail({ id, onBack }: { id: string; onBack: () => void }) {
+  const crm = useCRM();
+  const customer = crm.customers.find(c => c.id === id);
+  const [tab, setTab] = useState<Tab>('overview');
+  const [visitMsg, setVisitMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [purpose, setPurpose] = useState('Requirement Discussion');
+
+  if (!customer) return <div className="space-y-4"><EmptyRow text="Customer not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-[#007f24]">← Back to Customers</button></div>;
+
+  const accts = crm.accounts.filter(a => a.name === customer.name);
+  const contactList = crm.contacts.filter(c => c.account === customer.name);
+  const opps = crm.opportunities.filter(o => o.account === customer.name);
+  const acts = activities.filter(a => a.relatedTo === customer.name);
+  const tks = tasks.filter(t => t.related === customer.name);
+  const mts = meetings.filter(m => m.account === customer.name);
+  const vs = crm.visits.filter(v => v.customer === customer.name);
+
+  const tabs: { id: Tab; label: string; count?: number }[] = [
+    { id: 'overview', label: 'Overview' }, { id: 'accounts', label: 'Accounts', count: accts.length },
+    { id: 'contacts', label: 'Contacts', count: contactList.length }, { id: 'opportunities', label: 'Opportunities', count: opps.length },
+    { id: 'activities', label: 'Activities', count: acts.length }, { id: 'tasks', label: 'Tasks', count: tks.length },
+    { id: 'meetings', label: 'Meetings', count: mts.length }, { id: 'visits', label: 'Visits', count: vs.length },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <BackBar onBack={onBack} kicker={`Customers · ${customer.code}`} title={customer.name}
+        sub={`${customer.industry} · ${customer.city} · customer since ${customer.since}`}
+        badges={[<StatusBadge key="s" label={customer.status} tone={cusTone(customer.status)} />]}
+        actions={
+          <div className="flex items-end gap-2">
+            <select value={purpose} onChange={e => setPurpose(e.target.value)} className="h-8 rounded-md border border-input bg-card px-2 text-[12px]">
+              <option>Requirement Discussion</option><option>Demo</option><option>Follow-Up</option><option>Contract Discussion</option><option>Complaint Resolution</option>
+            </select>
+            <button onClick={() => setVisitMsg(crm.recordVisit({ customer: customer.name, contact: contactList[0]?.name ?? '', purpose }))}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#007f24] px-3 text-[12.5px] font-semibold text-white hover:bg-[#0a6b20]">
+              <MapPin className="size-3.5" /> Record Visit
+            </button>
+          </div>
+        } />
+
+      {visitMsg && (
+        <div className={`rounded-lg border px-4 py-2.5 text-[12.5px] ${visitMsg.ok ? 'border-[#bcdcc6] bg-[#e3f0e7] text-[#0f6b2e]' : 'border-[#eadfbe] bg-[#faf3e0] text-[#8a6d1a]'}`}>
+          {visitMsg.ok ? '✓' : '⚠'} {visitMsg.text}
+          {crm.checkIn.fix && <span className="ml-2 font-mono2 text-[10.5px]">GPS {crm.checkIn.fix.lat}, {crm.checkIn.fix.lng}</span>}
+        </div>
+      )}
+      {!crm.checkIn.checkedIn && !visitMsg && (
+        <div className="rounded-lg border border-[#eadfbe] bg-[#faf3e0] px-4 py-2.5 text-[12.5px] text-[#8a6d1a]">
+          ⚠ Check-In required — you must check in (sidebar) before recording a customer visit.
+        </div>
+      )}
+
+      <DetailTabs tabs={tabs} active={tab} onChange={setTab} />
+      <div className="pt-1">
+        {tab === 'overview' && (
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-lg border border-border bg-card p-4 md:col-span-2">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                <Field label="Phone"><Mono>{customer.phone}</Mono></Field>
+                <Field label="Email"><Mono>{customer.email || '—'}</Mono></Field>
+                <Field label="Owner">{customer.owner}</Field>
+                <Field label="Industry">{customer.industry}</Field>
+                <Field label="City">{customer.city}</Field>
+                <Field label="Revenue"><span className="font-display font-semibold">{customer.revenue ? fmtINR(customer.revenue) : '—'}</span></Field>
+              </div>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="kicker mb-2 text-muted-foreground">Snapshot</div>
+              <div className="space-y-1.5 font-mono2 text-[11px] text-muted-foreground">
+                <div>Open opportunities — {opps.filter(o => !['Won', 'Lost'].includes(o.stage)).length}</div>
+                <div>Activities — {acts.length} · Meetings — {mts.length}</div>
+                <div>Visits — {vs.length} · Contacts — {contactList.length}</div>
+              </div>
+            </div>
+          </div>
+        )}
+        {tab === 'accounts' && (accts.length ? <DataTable head={['Account', 'Industry', 'Owner', 'Open Opps', 'Revenue']} rows={accts.map(a => [
+          <span className="font-medium">{a.name}</span>, a.industry, a.owner, <Mono>{a.openOpps}</Mono>, <span className="font-display font-semibold">{a.revenue ? fmtINR(a.revenue) : '—'}</span>,
+        ])} /> : <EmptyRow text="No accounts linked yet." />)}
+        {tab === 'contacts' && (contactList.length ? <DataTable head={['Contact', 'Title', 'Email', 'Phone']} rows={contactList.map(c => [
+          <span className="font-medium">{c.name}</span>, c.title, <Mono className="text-muted-foreground">{c.email}</Mono>, <Mono className="text-muted-foreground">{c.phone}</Mono>,
+        ])} /> : <EmptyRow text="No contacts linked yet." />)}
+        {tab === 'opportunities' && (opps.length ? <DataTable head={['Code', 'Opportunity', 'Stage', 'Probability', 'Expected Revenue']} rows={opps.map(o => [
+          <Mono className="text-muted-foreground">{o.code}</Mono>, o.name, <StatusBadge label={o.stage} tone={o.stage === 'Won' ? 'ink' : o.stage === 'Lost' ? 'red' : 'blue'} />,
+          <Mono>{o.probability}%</Mono>, <span className="font-display font-semibold">{fmtINR(o.expectedRevenue)}</span>,
+        ])} /> : <EmptyRow text="No opportunities for this customer." />)}
+        {tab === 'activities' && (acts.length ? <DataTable head={['Type', 'Subject', 'Owner', 'Due', 'Status']} rows={acts.map(a => [
+          <StatusBadge label={a.type} tone="sage" />, a.subject, a.owner, <Mono className="text-muted-foreground">{a.due}</Mono>, <StatusBadge label={a.status} tone={a.status === 'Completed' ? 'green' : 'amber'} />,
+        ])} /> : <EmptyRow text="No activities recorded." />)}
+        {tab === 'tasks' && (tks.length ? <DataTable head={['Task', 'Assignee', 'Priority', 'Status', 'Due']} rows={tks.map(t => [
+          t.title, t.assignee, <StatusBadge label={t.priority} tone={t.priority === 'Critical' ? 'red' : 'amber'} />, <StatusBadge label={t.status} tone={t.status === 'Completed' ? 'green' : 'sage'} />, <Mono className="text-muted-foreground">{t.due}</Mono>,
+        ])} /> : <EmptyRow text="No tasks linked." />)}
+        {tab === 'meetings' && (mts.length ? <DataTable head={['Meeting', 'Date', 'Time', 'Mode', 'Organizer']} rows={mts.map(m => [
+          <span className="font-medium">{m.title}</span>, <Mono className="text-muted-foreground">{m.date}</Mono>, <Mono className="text-muted-foreground">{m.time}</Mono>, m.mode, m.organizer,
+        ])} /> : <EmptyRow text="No meetings scheduled." />)}
+        {tab === 'visits' && (vs.length ? <DataTable head={['Employee', 'Check-In', 'Check-Out', 'Duration', 'Purpose', 'Outcome']} rows={vs.map(v => [
+          v.employee, <Mono className="text-muted-foreground">{v.checkIn}</Mono>, <Mono className="text-muted-foreground">{v.checkOut}</Mono>, <Mono>{v.durationMin} min</Mono>, v.purpose, <span className="text-muted-foreground">{v.outcome}</span>,
+        ])} /> : <EmptyRow text="No visits recorded." />)}
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE 9: src/pages/details/OpportunityDetail.tsx — stage workflow + Won/Lost
+LANGUAGE: tsx
+================================================================================
+// src/pages/details/OpportunityDetail.tsx — stage workflow + Won/Lost
+import { useState } from 'react';
+import { DataTable, StatusBadge, Mono } from '@/components/shared';
+import { BackBar, DetailTabs, Field, EmptyRow } from '@/pages/details/shared';
+import { useCRM } from '@/store/crm';
+import { activities, tasks, meetings, fmtINR } from '@/data/mock';
+import type { OppStage } from '@/data/mock';
+import { cn } from '@/lib/utils';
+
+const flow: OppStage[] = ['Prospecting', 'Qualification', 'Proposal', 'Negotiation', 'Won'];
+const gate: Partial<Record<OppStage, string>> = {
+  Qualification: 'Requires customer interaction + requirements gathered',
+  Proposal: 'Requires solution identified + proposal prepared',
+  Negotiation: 'Requires proposal submitted + review initiated',
+  Won: 'Requires agreement finalised + approval received',
+};
+
+export default function OpportunityDetail({ id, onBack }: { id: string; onBack: () => void }) {
+  const crm = useCRM();
+  const opp = crm.opportunities.find(o => o.id === id);
+  const [tab, setTab] = useState<'tasks' | 'activities' | 'meetings'>('tasks');
+
+  if (!opp) return <div className="space-y-4"><EmptyRow text="Opportunity not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-[#007f24]">← Back to Opportunities</button></div>;
+
+  const tks = tasks.filter(t => t.related === opp.code);
+  const acts = activities.filter(a => a.relatedTo === opp.account);
+  const mts = meetings.filter(m => m.account === opp.account);
+  const closed = opp.stage === 'Won' || opp.stage === 'Lost';
+
+  return (
+    <div className="space-y-5">
+      <BackBar onBack={onBack} kicker={`Opportunities · ${opp.code}`} title={opp.name}
+        sub={`${opp.account} · owner ${opp.owner} · expected close ${opp.closeDate}`}
+        badges={[<StatusBadge key="st" label={opp.stage} tone={opp.stage === 'Won' ? 'ink' : opp.stage === 'Lost' ? 'red' : 'blue'} />,
+                 <StatusBadge key="pr" label={`${opp.probability}% probability`} tone={opp.probability >= 70 ? 'green' : opp.probability >= 30 ? 'amber' : 'gray'} />]}
+        actions={!closed && (
+          <>
+            <button onClick={() => crm.setOppStage(id, 'Won')} className="h-8 rounded-md bg-[#09352e] px-3 text-[12.5px] font-semibold text-white hover:bg-[#0c231e]">Won</button>
+            <button onClick={() => crm.setOppStage(id, 'Lost')} className="h-8 rounded-md border border-[#f0cdc4] bg-[#fbe9e6] px-3 text-[12.5px] font-semibold text-[#b03a26] hover:bg-[#f0cdc4]">Lost</button>
+          </>
+        )} />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-lg border border-border bg-card p-4"><div className="kicker text-muted-foreground">Expected Revenue</div><div className="font-display mt-1 text-[22px] font-semibold">{fmtINR(opp.expectedRevenue)}</div></div>
+        <div className="rounded-lg border border-border bg-card p-4"><div className="kicker text-muted-foreground">Weighted Forecast</div><div className="font-display mt-1 text-[22px] font-semibold">{fmtINR(opp.expectedRevenue * opp.probability / 100)}</div></div>
+        <div className="rounded-lg border border-border bg-card p-4"><div className="kicker text-muted-foreground">Close Date</div><div className="font-display mt-1 text-[22px] font-semibold">{opp.closeDate}</div></div>
+      </div>
+
+      {/* stage workflow */}
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="kicker mb-3 text-muted-foreground">Stage Workflow {closed && '— Closed'}</div>
+        <div className="flex flex-wrap items-center gap-2">
+          {flow.map((s, i) => {
+            const active = opp.stage === s;
+            const passed = flow.indexOf(opp.stage) > i;
+            return (
+              <button key={s} disabled={closed} onClick={() => crm.setOppStage(id, s)}
+                title={gate[s] ?? ''}
+                className={cn('h-8 rounded-md border px-3 text-[12px] font-medium transition-colors',
+                  active ? 'border-[#09352e] bg-[#09352e] text-white'
+                  : passed ? 'border-[#bcdcc6] bg-[#e3f0e7] text-[#0f6b2e]'
+                  : 'border-border bg-card text-muted-foreground hover:border-[#85c093] disabled:cursor-not-allowed disabled:opacity-60')}>
+                {s}
+              </button>
+            );
+          })}
+        </div>
+        {!closed && opp.stage !== 'Won' && gate[flow[flow.indexOf(opp.stage) + 1] as OppStage] && (
+          <div className="mt-2.5 font-mono2 text-[10.5px] text-muted-foreground">
+            → Next: {flow[flow.indexOf(opp.stage) + 1]} — {gate[flow[flow.indexOf(opp.stage) + 1] as OppStage]}
+          </div>
+        )}
+      </div>
+
+      <DetailTabs tabs={[{ id: 'tasks', label: 'Tasks', count: tks.length }, { id: 'activities', label: 'Activities', count: acts.length }, { id: 'meetings', label: 'Meetings', count: mts.length }]} active={tab} onChange={setTab} />
+      <div className="pt-1">
+        {tab === 'tasks' && (tks.length ? <DataTable head={['Task', 'Assignee', 'Priority', 'Status', 'Due']} rows={tks.map(t => [
+          t.title, t.assignee, <StatusBadge label={t.priority} tone={t.priority === 'Critical' ? 'red' : 'amber'} />, <StatusBadge label={t.status} tone={t.status === 'Completed' ? 'green' : 'sage'} />, <Mono className="text-muted-foreground">{t.due}</Mono>,
+        ])} /> : <EmptyRow text="No tasks linked to this opportunity." />)}
+        {tab === 'activities' && (acts.length ? <DataTable head={['Type', 'Subject', 'Owner', 'Due', 'Status']} rows={acts.map(a => [
+          <StatusBadge label={a.type} tone="sage" />, a.subject, a.owner, <Mono className="text-muted-foreground">{a.due}</Mono>, <StatusBadge label={a.status} tone={a.status === 'Completed' ? 'green' : 'amber'} />,
+        ])} /> : <EmptyRow text="No activities on this account." />)}
+        {tab === 'meetings' && (mts.length ? <DataTable head={['Meeting', 'Date', 'Time', 'Mode', 'Organizer', 'Status']} rows={mts.map(m => [
+          <span className="font-medium">{m.title}</span>, <Mono className="text-muted-foreground">{m.date}</Mono>, <Mono className="text-muted-foreground">{m.time}</Mono>, m.mode, m.organizer, <StatusBadge label={m.status} tone={m.status === 'Completed' ? 'green' : 'blue'} />,
+        ])} /> : <EmptyRow text="No meetings scheduled." />)}
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE 10: src/pages/AuditLogs.tsx
+LANGUAGE: tsx
+================================================================================
+// src/pages/AuditLogs.tsx
+import { useState } from 'react';
+import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, Mono } from '@/components/shared';
+import { useCRM } from '@/store/crm';
+
+export default function AuditLogs() {
+  const { audit } = useCRM();
+  const [filter, setFilter] = useState('All');
+  const modules = ['All', ...Array.from(new Set(audit.map(a => a.module)))];
+  const rows = audit.filter(a => filter === 'All' || a.module === filter);
+
+  return (
+    <div className="space-y-5">
+      <PageHeader kicker="Administration · Access Matrix" title="Audit Logs"
+        sub="Immutable trail of every create, update, conversion, stage change and geo event — visible to Super Admin and Company Admin only." />
+      <Toolbar placeholder="Search audit entries…">
+        {modules.map(m => <FilterChip key={m} label={m} active={filter === m} onClick={() => setFilter(m)} />)}
+      </Toolbar>
+      <DataTable head={['Time', 'User', 'Module', 'Action', 'Record']}
+        rows={rows.map(a => [
+          <Mono className="text-muted-foreground">{a.time}</Mono>,
+          <span className="font-medium">{a.user}</span>,
+          <StatusBadge label={a.module} tone="sage" />,
+          a.action,
+          <Mono className="text-muted-foreground">{a.record}</Mono>,
+        ])} />
+      <p className="font-mono2 text-[10.5px] text-muted-foreground">Entries are appended by store actions (login, conversion, stage changes, check-in/out, visits) — swap the store methods for FastAPI calls to persist.</p>
+    </div>
+  );
+}
+
+================================================================================
+FILE 11: src/App.tsx
+LANGUAGE: tsx
+================================================================================
+// src/App.tsx
+import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
+import {
+  LayoutDashboard, Funnel, Building2, Users, HandCoins, ListChecks, CheckSquare,
+  CalendarDays, MapPin, Footprints, Landmark, UserCog, Contact2, BarChart3,
+  Search, Bell, ChevronDown, Timer, LogIn, LogOut, Compass, ShieldCheck,
+} from 'lucide-react';
+import { CRMProvider, useCRM, navAllowed } from '@/store/crm';
+import { StatusBadge } from '@/components/shared';
+import Dashboard from '@/pages/Dashboard';
+import Leads from '@/pages/Leads';
+import Accounts from '@/pages/Accounts';
+import Contacts from '@/pages/Contacts';
+import Opportunities from '@/pages/Opportunities';
+import Activities from '@/pages/Activities';
+import Tasks from '@/pages/Tasks';
+import Meetings from '@/pages/Meetings';
+import Tracking from '@/pages/Tracking';
+import Visits from '@/pages/Visits';
+import Masters from '@/pages/Masters';
+import Reports from '@/pages/Reports';
+import Login from '@/pages/Login';
+import AuditLogs from '@/pages/AuditLogs';
+import GlobalSearch from '@/components/GlobalSearch';
+import NotificationsPanel from '@/components/NotificationsPanel';
+import LeadDetail from '@/pages/details/LeadDetail';
+import AccountDetail from '@/pages/details/AccountDetail';
+import CustomerDetail from '@/pages/details/CustomerDetail';
+import OpportunityDetail from '@/pages/details/OpportunityDetail';
+
+type NavItem = { id: string; label: string; icon: React.ElementType };
+type NavGroup = { group: string; items: NavItem[] };
+
+const NAV: NavGroup[] = [
+  { group: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }] },
+  {
+    group: 'CRM Operations', items: [
+      { id: 'leads', label: 'Leads', icon: Funnel },
+      { id: 'accounts', label: 'Accounts', icon: Building2 },
+      { id: 'contacts', label: 'Contacts', icon: Users },
+      { id: 'opportunities', label: 'Opportunities', icon: HandCoins },
+      { id: 'activities', label: 'Activities', icon: ListChecks },
+      { id: 'tasks', label: 'Tasks', icon: CheckSquare },
+      { id: 'meetings', label: 'Meetings', icon: CalendarDays },
+    ],
+  },
+  {
+    group: 'Employee Tracking', items: [
+      { id: 'tracking', label: 'Live Tracking', icon: MapPin },
+      { id: 'visits', label: 'Visits', icon: Footprints },
+    ],
+  },
+  {
+    group: 'Masters', items: [
+      { id: 'companies', label: 'Companies', icon: Landmark },
+      { id: 'employees', label: 'Employees', icon: UserCog },
+      { id: 'customers', label: 'Customers', icon: Contact2 },
+    ],
+  },
+  { group: 'Insights', items: [{ id: 'reports', label: 'Reports', icon: BarChart3 }] },
+  { group: 'Administration', items: [{ id: 'audit-logs', label: 'Audit Logs', icon: ShieldCheck }] },
+];
+
+const initials = (name: string) => name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+const fmtDur = (ms: number) => {
+  const s = Math.floor(ms / 1000);
+  return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+};
+
+function Shell() {
+  const crm = useCRM();
+  const [route, setRoute] = useState<{ page: string; id?: string }>({ page: 'dashboard' });
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [geoMsg, setGeoMsg] = useState('');
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearchOpen(true); }
+      if (e.key === 'Escape') { setSearchOpen(false); setNotifOpen(false); setMenuOpen(false); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => { clearInterval(t); window.removeEventListener('keydown', onKey); };
+  }, []);
+
+  if (!crm.user) return <Login />;
+  const user = crm.user;
+
+  const go = (page: string, id?: string) => {
+    if (!navAllowed(user.role, page)) return;
+    setRoute({ page, id });
+    setMenuOpen(false);
+  };
+
+  const page = navAllowed(user.role, route.page) ? route.page : 'dashboard';
+  const unread = crm.notifications.filter(n => !n.read).length;
+
+  const render = () => {
+    switch (page) {
+      case 'dashboard': return <Dashboard go={(p: string) => go(p)} />;
+      case 'leads': return <Leads onOpen={(id: string) => go('lead', id)} />;
+      case 'lead': return route.id ? <LeadDetail id={route.id} onBack={() => go('leads')} onNavigate={go} /> : <Leads onOpen={(id: string) => go('lead', id)} />;
+      case 'accounts': return <Accounts onOpen={(id: string) => go('account', id)} />;
+      case 'account': return route.id ? <AccountDetail id={route.id} onBack={() => go('accounts')} /> : <Accounts onOpen={(id: string) => go('account', id)} />;
+      case 'contacts': return <Contacts />;
+      case 'opportunities': return <Opportunities onOpen={(id: string) => go('opportunity', id)} />;
+      case 'opportunity': return route.id ? <OpportunityDetail id={route.id} onBack={() => go('opportunities')} /> : <Opportunities onOpen={(id: string) => go('opportunity', id)} />;
+      case 'activities': return <Activities />;
+      case 'tasks': return <Tasks />;
+      case 'meetings': return <Meetings />;
+      case 'tracking': return <Tracking />;
+      case 'visits': return <Visits />;
+      case 'companies': return <Masters tab="companies" />;
+      case 'employees': return <Masters tab="employees" />;
+      case 'customers': return route.id ? <CustomerDetail id={route.id} onBack={() => go('customers')} /> : <Masters tab="customers" onOpen={(id: string) => go('customer', id)} />;
+      case 'reports': return <Reports />;
+      case 'audit-logs': return <AuditLogs />;
+      default: return <Dashboard go={(p: string) => go(p)} />;
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      {/* Sidebar */}
+      <aside className="sticky top-0 flex h-screen w-[228px] shrink-0 flex-col border-r border-border bg-[#0c231e] text-[#cfe3d6]">
+        <div className="flex items-center gap-2.5 px-5 pt-5 pb-6">
+          <div className="flex size-8 items-center justify-center rounded-md bg-[#85c093]">
+            <Compass className="size-4.5 text-[#0c231e]" strokeWidth={2.4} />
+          </div>
+          <div>
+            <div className="font-display text-[15px] font-semibold tracking-tight text-white leading-none">CRM 360</div>
+            <div className="kicker mt-1 text-[#6f9480]">{user.role}</div>
+          </div>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-3 pb-4">
+          {NAV.map(g => {
+            const items = g.items.filter(it => navAllowed(user.role, it.id));
+            if (!items.length) return null;
+            return (
+              <div key={g.group} className="mb-4">
+                <div className="kicker px-2 pb-1.5 text-[#5d8171]">{g.group}</div>
+                {items.map(it => {
+                  const active = page === it.id || (it.id === 'customers' && page === 'customer')
+                    || (it.id === 'leads' && page === 'lead') || (it.id === 'accounts' && page === 'account')
+                    || (it.id === 'opportunities' && page === 'opportunity');
+                  const Icon = it.icon;
+                  return (
+                    <button key={it.id} onClick={() => go(it.id)}
+                      className={cn(
+                        'group mb-0.5 flex w-full items-center gap-2.5 rounded-md px-2 py-[7px] text-[13px] font-medium transition-colors',
+                        active ? 'bg-[#85c093] text-[#0c231e]' : 'text-[#a9c4b2] hover:bg-white/5 hover:text-white'
+                      )}>
+                      <Icon className="size-4 shrink-0" strokeWidth={2} />
+                      {user.role === 'Employee' && ['leads', 'accounts', 'contacts', 'opportunities', 'activities', 'tasks', 'meetings'].includes(it.id) ? `My ${it.label}` : it.label}
+                      {active && <span className="ml-auto size-1.5 rounded-full bg-[#0c231e]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </nav>
+        <div className="border-t border-white/10 p-3">
+          <button
+            onClick={async () => {
+              if (crm.checkIn.checkedIn) { crm.checkOut(); setGeoMsg(''); }
+              else { const r = await crm.requestCheckIn(); setGeoMsg(r.message); }
+            }}
+            className={cn('flex w-full items-center gap-2 rounded-md px-3 py-2 text-[12.5px] font-semibold transition-colors',
+              crm.checkIn.checkedIn ? 'bg-[#123a30] text-[#8fd4a8]' : 'bg-[#007f24] text-white hover:bg-[#0a6b20]')}>
+            {crm.checkIn.checkedIn ? <LogOut className="size-4" /> : <LogIn className="size-4" />}
+            {crm.checkIn.checkedIn ? 'Check-Out' : 'Check-In'}
+            {crm.checkIn.checkedIn && crm.checkIn.since &&
+              <span className="ml-auto flex items-center gap-1 font-mono2 text-[10px]"><Timer className="size-3" />{fmtDur(now.getTime() - crm.checkIn.since.getTime())}</span>}
+          </button>
+          {crm.checkIn.checkedIn && crm.checkIn.fix && (
+            <div className="mt-1.5 flex items-center gap-1 px-1 font-mono2 text-[9.5px] text-[#6f9480]">
+              <MapPin className="size-3" /> GPS active · {crm.checkIn.fix.lat}, {crm.checkIn.fix.lng}
+            </div>
+          )}
+          {geoMsg && !crm.checkIn.checkedIn && <div className="mt-1.5 px-1 font-mono2 text-[9.5px] text-[#c9b458]">{geoMsg}</div>}
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-border bg-background/85 px-6 backdrop-blur">
+          <button onClick={() => setSearchOpen(true)} className="relative w-full max-w-sm text-left">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <span className="flex h-9 w-full items-center rounded-md border border-input bg-card pl-9 pr-12 text-[13px] text-muted-foreground">Search leads, accounts, opportunities…</span>
+            <kbd className="kicker absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-muted-foreground">Ctrl K</kbd>
+          </button>
+          <div className="ml-auto flex items-center gap-3">
+            <StatusBadge label={crm.checkIn.checkedIn ? 'Checked-In' : 'Checked-Out'} tone={crm.checkIn.checkedIn ? 'green' : 'gray'} />
+            <button onClick={() => setNotifOpen(o => !o)} className="relative flex size-9 items-center justify-center rounded-md border border-input bg-card transition-colors hover:bg-secondary">
+              <Bell className="size-4" />
+              {unread > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-[#b03a26]" />}
+            </button>
+            <div className="relative">
+              <button onClick={() => setMenuOpen(o => !o)} className="flex items-center gap-2.5 rounded-md border border-input bg-card py-1.5 pl-1.5 pr-2.5 transition-colors hover:bg-secondary">
+                <div className="flex size-6 items-center justify-center rounded bg-[#09352e] font-mono2 text-[10px] font-semibold text-[#a8d8ba]">{initials(user.name)}</div>
+                <div className="text-left leading-tight">
+                  <div className="text-[12px] font-semibold">{user.name}</div>
+                  <div className="kicker text-muted-foreground">{user.role} · {user.designation}</div>
+                </div>
+                <ChevronDown className="size-3.5 text-muted-foreground" />
+              </button>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-11 z-40 w-[240px] rounded-lg border border-border bg-card p-1.5 shadow-lg">
+                    <div className="px-2.5 py-2">
+                      <div className="text-[12.5px] font-semibold">{user.name}</div>
+                      <div className="font-mono2 text-[10.5px] text-muted-foreground">{user.email}</div>
+                      <div className="font-mono2 text-[10.5px] text-muted-foreground">{user.company} · {user.code}</div>
+                    </div>
+                    <button onClick={() => crm.logout()}
+                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[12.5px] font-medium text-[#b03a26] transition-colors hover:bg-[#fbe9e6]">
+                      <LogOut className="size-3.5" /> Logout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 px-6 py-6">{render()}</main>
+      </div>
+
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} onNavigate={go} />
+      <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <CRMProvider>
+      <Shell />
+    </CRMProvider>
+  );
+}
+
+================================================================================
+FILE 12: src/pages/Leads.tsx — now store-backed, click-through, "My X" scoping for Employees
+LANGUAGE: tsx
+================================================================================
+// src/pages/Leads.tsx — now store-backed, click-through, "My X" scoping for Employees
+import { useState } from 'react';
+import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, ImportExport, Mono } from '@/components/shared';
+import type { Tone } from '@/components/shared';
+import { leadSources, fmtINR } from '@/data/mock';
+import type { LeadStatus } from '@/data/mock';
+import { useCRM } from '@/store/crm';
+
+const tone = (s: LeadStatus): Tone =>
+  s === 'Won' ? 'ink' : s === 'Lost' ? 'red' : s === 'New' ? 'sage' : s === 'Negotiation' ? 'amber' : s === 'Proposal Sent' ? 'blue' : 'green';
+
+const stages: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Negotiation', 'Won', 'Lost'];
+
+export default function Leads({ onOpen }: { onOpen: (id: string) => void }) {
+  const { leads, conversions, user } = useCRM();
+  const [filter, setFilter] = useState<string>('All');
+  const mine = user?.role === 'Employee';
+  const pool = mine ? leads.filter(l => l.owner === user?.name) : leads;
+  const rows = pool.filter(l => filter === 'All' || l.status === filter);
+
+  return (
+    <div className="space-y-5">
+      <PageHeader kicker="CRM Operations · Module 21" title={mine ? 'My Leads' : 'Leads'}
+        sub="Lifecycle: New → Contacted → Qualified → Proposal Sent → Negotiation → Won. Won leads can be converted to Customer + Account from the detail view."
+        action={<><ImportExport /><NewButton label="Create Lead" /></>} />
+      <Toolbar placeholder="Search lead name, company, phone…">
+        {['All', ...stages].map(s => <FilterChip key={s} label={s} active={filter === s} onClick={() => setFilter(filter === s ? 'All' : s)} />)}
+      </Toolbar>
+      <div className="flex gap-px overflow-hidden rounded-lg border border-border bg-border">
+        {stages.map(s => {
+          const n = pool.filter(l => l.status === s).length;
+          return (
+            <button key={s} onClick={() => setFilter(filter === s ? 'All' : s)}
+              className={`flex-1 px-3 py-3 text-left transition-colors ${filter === s ? 'bg-[#09352e] text-white' : 'bg-card hover:bg-[#f4f7f2]'}`}>
+              <div className={`kicker ${filter === s ? 'text-[#8fd4a8]' : 'text-muted-foreground'}`}>{s}</div>
+              <div className="font-display mt-1 text-[20px] font-semibold leading-none">{n}</div>
+            </button>
+          );
+        })}
+      </div>
+      <DataTable
+        head={['Lead Code', 'Lead', 'Company', 'Source', 'Status', 'Owner', 'Est. Value', 'Created', 'Phone']}
+        rows={rows.map(l => [
+          <Mono className="text-muted-foreground">{l.code}</Mono>,
+          <button onClick={() => onOpen(l.id)} className="font-medium text-[#0b5c37] hover:underline">{l.name}</button>,
+          l.company,
+          <span className="text-muted-foreground">{l.source}</span>,
+          <span className="flex items-center gap-1.5"><StatusBadge label={l.status} tone={tone(l.status)} />
+            {conversions.some(c => c.leadId === l.id) && <StatusBadge label="Converted" tone="ink" />}</span>,
+          l.owner,
+          <span className="font-display font-semibold">{fmtINR(l.value)}</span>,
+          <Mono className="text-muted-foreground">{l.createdOn.slice(5)}</Mono>,
+          <Mono className="text-muted-foreground">{l.phone}</Mono>,
+        ])}
+      />
+      <p className="font-mono2 text-[10.5px] text-muted-foreground">Click a lead name for details & conversion. Duplicate check runs on phone + company before save. Sources: {leadSources.join(' · ')}.</p>
+    </div>
+  );
+}
+
+================================================================================
+FILE 13: src/pages/Accounts.tsx — store-backed + click-through
+LANGUAGE: tsx
+================================================================================
+// src/pages/Accounts.tsx — store-backed + click-through
+import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, ImportExport, Mono } from '@/components/shared';
+import { fmtINR } from '@/data/mock';
+import { useCRM } from '@/store/crm';
+
+export default function Accounts({ onOpen }: { onOpen: (id: string) => void }) {
+  const { accounts, user } = useCRM();
+  const mine = user?.role === 'Employee';
+  const rows = mine ? accounts.filter(a => a.owner === user?.name) : accounts;
+
+  return (
+    <div className="space-y-5">
+      <PageHeader kicker="CRM Operations · Module 22" title={mine ? 'My Accounts' : 'Accounts'}
+        sub="Business entities created directly or via lead conversion. Click an account to open its 360° hub — contacts, opportunities, activities, tasks, meetings and visits in one place."
+        action={<><ImportExport /><NewButton label="Create Account" /></>} />
+      <Toolbar placeholder="Search accounts…">
+        <FilterChip label="All Industries" active />
+        <FilterChip label="All Owners" active />
+      </Toolbar>
+      <DataTable
+        head={['Account', 'Industry', 'City', 'Owner', 'Contacts', 'Open Opps', 'Lifetime Revenue', 'Health']}
+        rows={rows.map(a => [
+          <button onClick={() => onOpen(a.id)} className="font-medium text-[#0b5c37] hover:underline">{a.name}</button>,
+          <span className="text-muted-foreground">{a.industry}</span>,
+          a.city,
+          a.owner,
+          <Mono>{a.contacts}</Mono>,
+          <Mono>{a.openOpps}</Mono>,
+          <span className="font-display font-semibold">{a.revenue ? fmtINR(a.revenue) : '—'}</span>,
+          <StatusBadge label={a.openOpps > 0 ? 'Engaged' : 'Quiet'} tone={a.openOpps > 0 ? 'green' : 'gray'} />,
+        ])}
+      />
+    </div>
+  );
+}
+
+================================================================================
+FILE 14: src/pages/Opportunities.tsx — store-backed + click-through + Lost column
+LANGUAGE: tsx
+================================================================================
+// src/pages/Opportunities.tsx — store-backed + click-through + Lost column
+import { PageHeader, NewButton, ImportExport, Mono, StatusBadge } from '@/components/shared';
+import { fmtINR } from '@/data/mock';
+import type { OppStage } from '@/data/mock';
+import { useCRM } from '@/store/crm';
+import { ArrowRight } from 'lucide-react';
+
+const stages: OppStage[] = ['Prospecting', 'Qualification', 'Proposal', 'Negotiation', 'Won', 'Lost'];
+const gate: Record<string, string> = {
+  Prospecting: '→ Qualification requires: customer interaction + requirements gathered',
+  Qualification: '→ Proposal requires: solution identified + proposal prepared',
+  Proposal: '→ Negotiation requires: proposal submitted + review initiated',
+  Negotiation: '→ Won requires: agreement finalised + approval received',
+  Won: 'Closed — revenue booked to forecast',
+  Lost: 'Closed lost — reason captured in detail view',
+};
+
+export default function Opportunities({ onOpen }: { onOpen: (id: string) => void }) {
+  const { opportunities, user } = useCRM();
+  const mine = user?.role === 'Employee';
+  const pool = mine ? opportunities.filter(o => o.owner === user?.name) : opportunities;
+
+  return (
+    <div className="space-y-5">
+      <PageHeader kicker="CRM Operations · Module 24" title={mine ? 'My Opportunities' : 'Opportunities'}
+        sub="Forecast = Expected Revenue × Probability %. Click any card for the stage workflow with Won / Lost actions."
+        action={<><ImportExport /><NewButton label="Create Opportunity" /></>} />
+
+      <div className="flex gap-3 overflow-x-auto pb-2">
+        {stages.map(st => {
+          const opps = pool.filter(o => o.stage === st);
+          const total = opps.reduce((s, o) => s + o.expectedRevenue, 0);
+          const closed = st === 'Won' || st === 'Lost';
+          return (
+            <div key={st} className="w-[268px] shrink-0">
+              <div className={`mb-2 flex items-center justify-between rounded-md border px-3 py-2 ${st === 'Won' ? 'border-[#09352e] bg-[#09352e] text-white' : st === 'Lost' ? 'border-[#f0cdc4] bg-[#fbe9e6]' : 'border-border bg-card'}`}>
+                <div className="kicker">{st}</div>
+                <Mono className={st === 'Won' ? 'text-[#8fd4a8]' : st === 'Lost' ? 'text-[#b03a26]' : 'text-muted-foreground'}>{opps.length} · {fmtINR(total)}</Mono>
+              </div>
+              <div className="space-y-2">
+                {opps.map(o => (
+                  <button key={o.id} onClick={() => onOpen(o.id)} className="block w-full rounded-lg border border-border bg-card p-3 text-left transition-colors hover:border-[#85c093]">
+                    <div className="flex items-center justify-between">
+                      <Mono className="text-muted-foreground">{o.code}</Mono>
+                      <StatusBadge label={`${o.probability}%`} tone={o.probability >= 70 ? 'green' : o.probability >= 30 ? 'amber' : 'gray'} />
+                    </div>
+                    <div className="mt-1.5 text-[13px] font-medium leading-snug">{o.name}</div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">{o.account}</div>
+                    <div className="mt-2.5 flex items-center justify-between border-t border-border/60 pt-2">
+                      <span className="font-display text-[14px] font-semibold">{fmtINR(o.expectedRevenue)}</span>
+                      <Mono className="text-muted-foreground">close {o.closeDate.slice(5)}</Mono>
+                    </div>
+                    <div className="mt-1 text-[11px] text-muted-foreground">{o.owner}</div>
+                  </button>
+                ))}
+                {opps.length === 0 && <div className="rounded-lg border border-dashed border-border p-4 text-center font-mono2 text-[10.5px] text-muted-foreground">No deals</div>}
+              </div>
+              <div className="mt-2 flex items-start gap-1 px-1 font-mono2 text-[9.5px] leading-relaxed text-muted-foreground">
+                <ArrowRight className="mt-px size-3 shrink-0" />{gate[st]}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="rounded-lg border border-border bg-card px-4 py-3">
+        <span className="kicker text-muted-foreground">Weighted Forecast </span>
+        <span className="font-display text-[15px] font-semibold">
+          {fmtINR(pool.filter(o => !['Won', 'Lost'].includes(o.stage)).reduce((s, o) => s + o.expectedRevenue * o.probability / 100, 0))}
+        </span>
+        <span className="ml-2 font-mono2 text-[10.5px] text-muted-foreground">= Σ (expected revenue × probability) across open stages</span>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE 15: src/pages/Masters.tsx — customers tab now store-backed + click-through.
+LANGUAGE: tsx
+================================================================================
+// src/pages/Masters.tsx — customers tab now store-backed + click-through.
+// (companies & employees tabs unchanged)
+import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, ImportExport, Mono } from '@/components/shared';
+import type { Tone } from '@/components/shared';
+import { companies, employees, fmtINR } from '@/data/mock';
+import { useCRM } from '@/store/crm';
+
+const empTone = (s: string): Tone => s === 'Active' ? 'green' : s === 'On Leave' ? 'amber' : 'gray';
+const cusTone = (s: string): Tone => s === 'Active' ? 'green' : s === 'Prospect' ? 'blue' : 'gray';
+
+export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees' | 'customers'; onOpen?: (id: string) => void }) {
+  const { customers } = useCRM();
+
+  if (tab === 'companies') return (
+    <div className="space-y-5">
+      <PageHeader kicker="Masters · Module 17" title="Companies"
+        sub="Primary organisational entity. Multi-company deployment with complete data isolation. Company Code must be unique."
+        action={<><ImportExport /><NewButton label="Create Company" /></>} />
+      <Toolbar placeholder="Search companies…"><FilterChip label="Active" active /><FilterChip label="Inactive" /></Toolbar>
+      <DataTable
+        head={['Code', 'Company', 'Industry', 'City', 'Country', 'Employees', 'Status', 'Created On']}
+        rows={companies.map(c => [
+          <Mono className="text-muted-foreground">{c.code}</Mono>,
+          <span className="font-medium">{c.name}</span>,
+          <span className="text-muted-foreground">{c.industry}</span>,
+          c.city, c.country,
+          <Mono>{c.employees}</Mono>,
+          <StatusBadge label={c.status} tone={c.status === 'Active' ? 'green' : 'gray'} />,
+          <Mono className="text-muted-foreground">{c.createdOn}</Mono>,
+        ])}
+      />
+    </div>
+  );
+
+  if (tab === 'employees') return (
+    <div className="space-y-5">
+      <PageHeader kicker="Masters · Module 18" title="Employees"
+        sub="Central user repository. Reporting manager defines hierarchy visibility. GPS tracking opt-in controls geo module access."
+        action={<><ImportExport /><NewButton label="Create Employee" /></>} />
+      <Toolbar placeholder="Search employees…"><FilterChip label="All Companies" active /><FilterChip label="GPS Enabled" /></Toolbar>
+      <DataTable
+        head={['Code', 'Employee', 'Email', 'Company', 'Designation', 'Reports To', 'Role', 'GPS', 'Status']}
+        rows={employees.map(e => [
+          <Mono className="text-muted-foreground">{e.code}</Mono>,
+          <div><div className="font-medium">{e.name}</div><Mono className="text-muted-foreground">{e.mobile}</Mono></div>,
+          <Mono className="text-muted-foreground">{e.email}</Mono>,
+          <span className="text-muted-foreground">{e.company}</span>,
+          e.designation,
+          <span className="text-muted-foreground">{e.manager}</span>,
+          <StatusBadge label={e.role} tone={e.role === 'Company Admin' ? 'ink' : e.role === 'Manager' ? 'blue' : 'sage'} />,
+          <StatusBadge label={e.gps ? 'On' : 'Off'} tone={e.gps ? 'green' : 'gray'} />,
+          <StatusBadge label={e.status} tone={empTone(e.status)} />,
+        ])}
+      />
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      <PageHeader kicker="Masters · Module 19" title="Customers"
+        sub="Lifecycle: Prospect → Active → Inactive. Created directly or through lead conversion. Click a customer to open Customer 360."
+        action={<><ImportExport /><NewButton label="Create Customer" /></>} />
+      <Toolbar placeholder="Search customers…"><FilterChip label="All Statuses" active /><FilterChip label="All Owners" /></Toolbar>
+      <DataTable
+        head={['Code', 'Customer', 'Industry', 'City', 'Owner', 'Contact', 'Status', 'Customer Since', 'Revenue']}
+        rows={customers.map(c => [
+          <Mono className="text-muted-foreground">{c.code}</Mono>,
+          onOpen
+            ? <button onClick={() => onOpen(c.id)} className="font-medium text-[#0b5c37] hover:underline">{c.name}</button>
+            : <span className="font-medium">{c.name}</span>,
+          <span className="text-muted-foreground">{c.industry}</span>,
+          c.city, c.owner,
+          <div><Mono className="text-muted-foreground">{c.phone}</Mono><div className="font-mono2 text-[10.5px] text-muted-foreground">{c.email}</div></div>,
+          <StatusBadge label={c.status} tone={cusTone(c.status)} />,
+          <Mono className="text-muted-foreground">{c.since}</Mono>,
+          <span className="font-display font-semibold">{c.revenue ? fmtINR(c.revenue) : '—'}</span>,
+        ])}
+      />
+    </div>
+  );
+}
+
+================================================================================
+FILE 16: extracted_16
+LANGUAGE: tsx
+================================================================================
+export function FilterChip({ label, active, onClick }: { label: string; active?: boolean; onClick?: () => void }) {
+  return (
+    <button onClick={onClick} className={cn('h-8 rounded-md border px-3 text-[12px] font-medium transition-colors',
+      active ? 'border-[#09352e] bg-[#09352e] text-white' : 'border-input bg-card text-muted-foreground hover:text-foreground')}>
+      {label}
+    </button>
+  );
+}
+
+================================================================================
+FILE 17: src/pages/Reports.tsx
+LANGUAGE: tsx
+================================================================================
+// src/pages/Reports.tsx
+import { useState } from 'react';
+import { PageHeader, StatusBadge, Mono, DataTable } from '@/components/shared';
+import { Download } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  leads, opportunities, customers, accounts, employees, visits, trackPoints,
+  tasks, meetings, activities, leadSources, fmtINR,
+} from '@/data/mock';
+
+type Cat = 'Sales' | 'Customer' | 'Employee' | 'Geo';
+const CATS: Cat[] = ['Sales', 'Customer', 'Employee', 'Geo'];
+
+const REPORTS: Record<Cat, { name: string; desc: string; freq: string }[]> = {
+  Sales: [
+    { name: 'Lead Conversion Report', desc: 'Conversion rate by source.', freq: 'Weekly' },
+    { name: 'Sales Pipeline Report', desc: 'Stage-wise opportunity value with weighted forecast.', freq: 'Daily' },
+    { name: 'Revenue Forecast', desc: 'Probability-weighted pipeline by owner.', freq: 'Weekly' },
+    { name: 'Won / Lost Opportunities', desc: 'Closed deals with owner and value.', freq: 'Monthly' },
+    { name: 'Opportunity Aging', desc: 'Days remaining to expected close.', freq: 'Weekly' },
+    { name: 'Owner Performance', desc: 'Leads, wins and pipeline per owner.', freq: 'Monthly' },
+  ],
+  Customer: [
+    { name: 'Customer Directory', desc: 'All customers with owner and status.', freq: 'Monthly' },
+    { name: 'Customer Engagement', desc: 'Touchpoints and recency per customer.', freq: 'Weekly' },
+    { name: 'Account Revenue', desc: 'Lifetime revenue by account.', freq: 'Monthly' },
+    { name: 'Industry Analysis', desc: 'Customer distribution by industry.', freq: 'Quarterly' },
+  ],
+  Employee: [
+    { name: 'Employee Activity Report', desc: 'Tasks, meetings and activities per employee.', freq: 'Weekly' },
+    { name: 'Employee Task Report', desc: 'Task load and completion by assignee.', freq: 'Weekly' },
+    { name: 'Employee Meeting Report', desc: 'Meetings organized per employee.', freq: 'Weekly' },
+    { name: 'Attendance & Working Hours', desc: 'Check-in status and field presence.', freq: 'Daily' },
+  ],
+  Geo: [
+    { name: 'Check-In Report', desc: 'Who is checked in, where and since when.', freq: 'Daily' },
+    { name: 'Live Tracking Summary', desc: 'Current status of every tracked employee.', freq: 'Live' },
+    { name: 'Distance Travelled', desc: 'Kilometres covered today per employee.', freq: 'Daily' },
+    { name: 'Visit Report', desc: 'Geo-verified visits, duration and outcome.', freq: 'Daily' },
+  ],
+};
+
+function runReport(name: string): { head: string[]; rows: React.ReactNode[][] } | null {
+  switch (name) {
+    case 'Lead Conversion Report': return {
+      head: ['Source', 'Leads', 'Won', 'Lost', 'Conversion %'],
+      rows: leadSources.map(s => {
+        const ls = leads.filter(l => l.source === s);
+        const won = ls.filter(l => l.status === 'Won').length;
+        return [s, <Mono>{ls.length}</Mono>, <Mono>{won}</Mono>, <Mono>{ls.filter(l => l.status === 'Lost').length}</Mono>,
+          <span className="font-display font-semibold">{ls.length ? Math.round(won / ls.length * 100) : 0}%</span>];
+      }),
+    };
+    case 'Sales Pipeline Report': return {
+      head: ['Stage', 'Deals', 'Pipeline Value', 'Weighted'],
+      rows: ['Prospecting', 'Qualification', 'Proposal', 'Negotiation', 'Won', 'Lost'].map(st => {
+        const os = opportunities.filter(o => o.stage === st);
+        const val = os.reduce((a, o) => a + o.expectedRevenue, 0);
+        return [st, <Mono>{os.length}</Mono>, <span className="font-display font-semibold">{fmtINR(val)}</span>,
+          <span className="font-display font-semibold">{fmtINR(os.reduce((a, o) => a + o.expectedRevenue * o.probability / 100, 0))}</span>];
+      }),
+    };
+    case 'Revenue Forecast': return {
+      head: ['Owner', 'Open Deals', 'Pipeline', 'Weighted Forecast'],
+      rows: Array.from(new Set(opportunities.map(o => o.owner))).map(ow => {
+        const os = opportunities.filter(o => o.owner === ow && !['Won', 'Lost'].includes(o.stage));
+        return [ow, <Mono>{os.length}</Mono>, <span className="font-display font-semibold">{fmtINR(os.reduce((a, o) => a + o.expectedRevenue, 0))}</span>,
+          <span className="font-display font-semibold">{fmtINR(os.reduce((a, o) => a + o.expectedRevenue * o.probability / 100, 0))}</span>];
+      }),
+    };
+    case 'Won / Lost Opportunities': return {
+      head: ['Code', 'Opportunity', 'Account', 'Owner', 'Result', 'Value'],
+      rows: opportunities.filter(o => o.stage === 'Won' || o.stage === 'Lost').map(o => [
+        <Mono className="text-muted-foreground">{o.code}</Mono>, o.name, o.account, o.owner,
+        <StatusBadge label={o.stage} tone={o.stage === 'Won' ? 'ink' : 'red'} />,
+        <span className="font-display font-semibold">{fmtINR(o.expectedRevenue)}</span>]),
+    };
+    case 'Opportunity Aging': return {
+      head: ['Code', 'Opportunity', 'Stage', 'Close Date', 'Days Left'],
+      rows: opportunities.filter(o => !['Won', 'Lost'].includes(o.stage)).map(o => {
+        const d = Math.round((new Date(o.closeDate).getTime() - Date.now()) / 86400000);
+        return [<Mono className="text-muted-foreground">{o.code}</Mono>, o.name, o.stage, <Mono className="text-muted-foreground">{o.closeDate}</Mono>,
+          <StatusBadge label={`${d} days`} tone={d < 14 ? 'red' : d < 45 ? 'amber' : 'green'} />];
+      }),
+    };
+    case 'Owner Performance': return {
+      head: ['Owner', 'Leads', 'Won Leads', 'Open Pipeline', 'Closed Won'],
+      rows: Array.from(new Set(leads.map(l => l.owner))).map(ow => {
+        const ls = leads.filter(l => l.owner === ow);
+        const os = opportunities.filter(o => o.owner === ow);
+        return [ow, <Mono>{ls.length}</Mono>, <Mono>{ls.filter(l => l.status === 'Won').length}</Mono>,
+          <span className="font-display font-semibold">{fmtINR(os.filter(o => !['Won', 'Lost'].includes(o.stage)).reduce((a, o) => a + o.expectedRevenue, 0))}</span>,
+          <span className="font-display font-semibold">{fmtINR(os.filter(o => o.stage === 'Won').reduce((a, o) => a + o.expectedRevenue, 0))}</span>];
+      }),
+    };
+    case 'Customer Directory': return {
+      head: ['Code', 'Customer', 'Industry', 'City', 'Owner', 'Status', 'Since'],
+      rows: customers.map(c => [<Mono className="text-muted-foreground">{c.code}</Mono>, <span className="font-medium">{c.name}</span>,
+        c.industry, c.city, c.owner, <StatusBadge label={c.status} tone={c.status === 'Active' ? 'green' : c.status === 'Prospect' ? 'blue' : 'gray'} />,
+        <Mono className="text-muted-foreground">{c.since}</Mono>]),
+    };
+    case 'Customer Engagement': return {
+      head: ['Customer', 'Activities', 'Meetings', 'Tasks', 'Last Touch'],
+      rows: customers.map(c => {
+        const a = activities.filter(x => x.relatedTo === c.name).length;
+        const m = meetings.filter(x => x.account === c.name).length;
+        const t = tasks.filter(x => x.related === c.name).length;
+        const last = [...activities.filter(x => x.relatedTo === c.name).map(x => x.due), ...meetings.filter(x => x.account === c.name).map(x => x.date)].sort().pop() ?? '—';
+        return [<span className="font-medium">{c.name}</span>, <Mono>{a}</Mono>, <Mono>{m}</Mono>, <Mono>{t}</Mono>, <Mono className="text-muted-foreground">{String(last).slice(0, 10)}</Mono>];
+      }),
+    };
+    case 'Account Revenue': return {
+      head: ['Account', 'Industry', 'Owner', 'Open Opps', 'Lifetime Revenue'],
+      rows: [...accounts].sort((a, b) => b.revenue - a.revenue).map(a => [<span className="font-medium">{a.name}</span>, a.industry, a.owner,
+        <Mono>{a.openOpps}</Mono>, <span className="font-display font-semibold">{a.revenue ? fmtINR(a.revenue) : '—'}</span>]),
+    };
+    case 'Industry Analysis': return {
+      head: ['Industry', 'Customers', 'Total Revenue'],
+      rows: Array.from(new Set(customers.map(c => c.industry))).map(ind => {
+        const cs = customers.filter(c => c.industry === ind);
+        return [ind, <Mono>{cs.length}</Mono>, <span className="font-display font-semibold">{fmtINR(cs.reduce((a, c) => a + c.revenue, 0))}</span>];
+      }),
+    };
+    case 'Employee Activity Report': return {
+      head: ['Employee', 'Designation', 'Tasks', 'Meetings', 'Activities'],
+      rows: employees.filter(e => e.status !== 'Inactive').map(e => [<span className="font-medium">{e.name}</span>, e.designation,
+        <Mono>{tasks.filter(t => t.assignee === e.name).length}</Mono>, <Mono>{meetings.filter(m => m.organizer === e.name).length}</Mono>,
+        <Mono>{activities.filter(a => a.owner === e.name).length}</Mono>]),
+    };
+    case 'Employee Task Report': return {
+      head: ['Task', 'Assignee', 'Priority', 'Status', 'Due'],
+      rows: tasks.map(t => [t.title, t.assignee, <StatusBadge label={t.priority} tone={t.priority === 'Critical' ? 'red' : 'amber'} />,
+        <StatusBadge label={t.status} tone={t.status === 'Completed' ? 'green' : 'sage'} />, <Mono className="text-muted-foreground">{t.due}</Mono>]),
+    };
+    case 'Employee Meeting Report': return {
+      head: ['Meeting', 'Account', 'Date', 'Mode', 'Organizer', 'Status'],
+      rows: meetings.map(m => [<span className="font-medium">{m.title}</span>, m.account, <Mono className="text-muted-foreground">{m.date}</Mono>, m.mode,
+        m.organizer, <StatusBadge label={m.status} tone={m.status === 'Completed' ? 'green' : 'blue'} />]),
+    };
+    case 'Attendance & Working Hours': return {
+      head: ['Employee', 'Status', 'Checked In Since', 'Visits Today', 'Km Today'],
+      rows: trackPoints.map(t => [t.employee, <StatusBadge label={t.status} tone={t.status === 'Checked-In' ? 'green' : t.status === 'On Leave' ? 'amber' : 'gray'} />,
+        <Mono className="text-muted-foreground">{t.since}</Mono>, <Mono>{t.visitsToday}</Mono>, <Mono>{t.kmToday} km</Mono>]),
+    };
+    case 'Check-In Report': return {
+      head: ['Employee', 'Status', 'Since', 'Last Area'],
+      rows: trackPoints.map(t => [t.employee, <StatusBadge label={t.status} tone={t.status === 'Checked-In' ? 'green' : t.status === 'On Leave' ? 'amber' : 'gray'} />,
+        <Mono className="text-muted-foreground">{t.since}</Mono>, <span className="text-muted-foreground">{t.lastArea}</span>]),
+    };
+    case 'Live Tracking Summary': return {
+      head: ['Employee', 'Status', 'Last Area', 'Visits', 'Km Today', 'Map Position'],
+      rows: trackPoints.map(t => [t.employee, <StatusBadge label={t.status} tone={t.status === 'Checked-In' ? 'green' : t.status === 'On Leave' ? 'amber' : 'gray'} />,
+        <span className="text-muted-foreground">{t.lastArea}</span>, <Mono>{t.visitsToday}</Mono>, <Mono>{t.kmToday} km</Mono>,
+        <Mono className="text-muted-foreground">{t.x}%, {t.y}%</Mono>]),
+    };
+    case 'Distance Travelled': return {
+      head: ['Employee', 'Km Today', 'Visits Today', 'Avg km / Visit'],
+      rows: trackPoints.filter(t => t.kmToday > 0).map(t => [t.employee, <Mono>{t.kmToday} km</Mono>, <Mono>{t.visitsToday}</Mono>,
+        <Mono>{(t.kmToday / Math.max(1, t.visitsToday)).toFixed(1)} km</Mono>]),
+    };
+    case 'Visit Report': return {
+      head: ['Employee', 'Customer', 'Check-In', 'Check-Out', 'Duration', 'Purpose', 'Outcome', 'Distance'],
+      rows: visits.map(v => [v.employee, v.customer, <Mono className="text-muted-foreground">{v.checkIn}</Mono>, <Mono className="text-muted-foreground">{v.checkOut}</Mono>,
+        <Mono>{v.durationMin} min</Mono>, v.purpose, <span className="text-muted-foreground">{v.outcome}</span>, <Mono>{v.distanceKm} km</Mono>]),
+    };
+    default: return null;
+  }
+}
+
+export default function Reports() {
+  const [cat, setCat] = useState<Cat>('Sales');
+  const [active, setActive] = useState<string | null>(null);
+  const table = active ? runReport(active) : null;
+
+  return (
+    <div className="space-y-5">
+      <PageHeader kicker="Insights · Module 15" title="Reports"
+        sub="Consolidated operational visibility across Sales, Customer, Employee and Geo analytics. Every report respects role-based data visibility and company isolation." />
+      <div className="flex gap-1.5">
+        {CATS.map(c => (
+          <button key={c} onClick={() => { setCat(c); setActive(null); }}
+            className={cn('h-8 rounded-md border px-3 text-[12.5px] font-medium transition-colors',
+              cat === c ? 'border-[#09352e] bg-[#09352e] text-white' : 'border-input bg-card text-muted-foreground hover:text-foreground')}>
+            {c}
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {REPORTS[cat].map(r => (
+          <div key={r.name} onClick={() => setActive(r.name)}
+            className={cn('flex cursor-pointer flex-col rounded-lg border bg-card p-4 transition-colors',
+              active === r.name ? 'border-[#007f24]' : 'border-border hover:border-[#85c093]')}>
+            <div className="flex items-center justify-between">
+              <StatusBadge label={cat} tone="sage" />
+              <Mono className="text-muted-foreground">{r.freq}</Mono>
+            </div>
+            <div className="font-display mt-3 text-[15px] font-semibold">{r.name}</div>
+            <p className="mt-1 flex-1 text-[12px] leading-relaxed text-muted-foreground">{r.desc}</p>
+            <button className="mt-3 inline-flex h-8 w-fit items-center gap-1.5 rounded-md border border-input px-3 text-[12px] font-medium transition-colors hover:border-[#007f24] hover:text-[#007f24]">
+              <Download className="size-3.5" /> Export Excel / CSV
+            </button>
+          </div>
+        ))}
+      </div>
+      {table && (
+        <div className="space-y-2.5">
+          <div className="kicker text-muted-foreground">Preview · {active}</div>
+          <DataTable head={table.head} rows={table.rows} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+================================================================================
+FILE 18: src/store/crm.tsx
+LANGUAGE: tsx
+================================================================================
+// src/store/crm.tsx
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import {
+  leads as seedLeads, accounts as seedAccounts, customers as seedCustomers,
+  contacts as seedContacts, opportunities as seedOpps, visits as seedVisits,
+  employees,
+} from '@/data/mock';
+import type { Lead, Account, Customer, Contact, Opportunity, Visit, OppStage } from '@/data/mock';
+
+export type Role = 'Super Admin' | 'Company Admin' | 'Manager' | 'Employee';
+
+export interface SessionUser {
+  name: string; email: string; role: Role; code: string;
+  company: string; designation: string; manager: string;
+}
+
+export interface AuditEntry { id: number; time: string; user: string; module: string; action: string; record: string; }
+export type NotifKind = 'task' | 'meeting' | 'alert' | 'gps' | 'lead' | 'audit';
+export interface AppNotification { id: number; kind: NotifKind; title: string; body: string; time: string; read: boolean; }
+export interface GeoFix { lat: number; lng: number; }
+export interface CheckInState { checkedIn: boolean; since: Date | null; fix: GeoFix | null; address: string; }
+export interface Conversion { leadId: string; customerId: string; accountId: string; at: string; by: string; }
+
+const DEMO_USERS: (SessionUser & { password: string })[] = [
+  { name: 'Aditya Verma', email: 'admin@crm360.io', password: 'admin123', role: 'Super Admin', code: 'ADM-001', company: 'CRM 360 HQ', designation: 'Platform Administrator', manager: '—' },
+  ...employees.map(e => ({
+    name: e.name, email: e.email, password: 'demo123', role: e.role, code: e.code,
+    company: e.company, designation: e.designation, manager: e.manager,
+  })),
+];
+
+const nowTime = () => new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+const nextCode = (prefix: string, n: number) => `${prefix}-${String(n).padStart(4, '0')}`;
+const FALLBACK_FIX: GeoFix = { lat: 19.2403, lng: 73.1303 };
+
+function locate(): Promise<{ fix: GeoFix; source: 'gps' | 'fallback' }> {
+  return new Promise(resolve => {
+    if (!('geolocation' in navigator)) return resolve({ fix: FALLBACK_FIX, source: 'fallback' });
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ fix: { lat: +pos.coords.latitude.toFixed(4), lng: +pos.coords.longitude.toFixed(4) }, source: 'gps' }),
+      () => resolve({ fix: FALLBACK_FIX, source: 'fallback' }),
+      { timeout: 5000, maximumAge: 60000 },
+    );
+  });
+}
+
+export interface CRMStore {
+  user: SessionUser | null;
+  login: (email: string, password: string) => string | null;
+  logout: () => void;
+  leads: Lead[]; accounts: Account[]; customers: Customer[];
+  contacts: Contact[]; opportunities: Opportunity[]; visits: Visit[];
+  conversions: Conversion[];
+  audit: AuditEntry[];
+  logAudit: (module: string, action: string, record: string) => void;
+  notifications: AppNotification[];
+  notify: (kind: NotifKind, title: string, body: string) => void;
+  markAllRead: () => void;
+  convertLead: (leadId: string, owner: string, customerStatus: 'Active' | 'Prospect') => { customer: Customer; account: Account } | null;
+  setOppStage: (oppId: string, stage: OppStage) => void;
+  checkIn: CheckInState;
+  requestCheckIn: () => Promise<{ ok: boolean; source: 'gps' | 'fallback'; message: string }>;
+  checkOut: () => void;
+  recordVisit: (input: { customer: string; contact: string; purpose: string }) => { ok: boolean; message: string };
+}
+
+const CRMContext = createContext<CRMStore | null>(null);
+
+export function CRMProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [leads, setLeads] = useState<Lead[]>(seedLeads);
+  const [accounts, setAccounts] = useState<Account[]>(seedAccounts);
+  const [customers, setCustomers] = useState<Customer[]>(seedCustomers);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>(seedOpps);
+  const [visits, setVisits] = useState<Visit[]>(seedVisits);
+  const [conversions, setConversions] = useState<Conversion[]>([]);
+  const [checkIn, setCheckIn] = useState<CheckInState>({ checkedIn: false, since: null, fix: null, address: '' });
+
+  const idRef = useRef(100);
+  const nidRef = useRef(10);
+  const aidRef = useRef(10);
+  const cusRef = useRef(1071);
+  const acctRef = useRef(100);
+
+  const [audit, setAudit] = useState<AuditEntry[]>([
+    { id: 1, time: '10:42', user: 'Rohan Kulkarni', module: 'Lead', action: 'Updated', record: 'LD-2205' },
+    { id: 2, time: '10:38', user: 'Amit Sharma', module: 'Task', action: 'Completed', record: 'TK-381' },
+    { id: 3, time: '10:21', user: 'Aditya Verma', module: 'Employee', action: 'Created', record: 'EMP-108' },
+    { id: 4, time: '09:55', user: 'Priya Nair', module: 'Opportunity', action: 'Stage Change', record: 'OPP-3301' },
+  ]);
+
+  const [notifications, setNotifications] = useState<AppNotification[]>([
+    { id: 1, kind: 'task', title: 'New Task Assigned', body: 'Complete API integration', time: '2 min ago', read: false },
+    { id: 2, kind: 'meeting', title: 'Meeting Tomorrow', body: 'Trident Auto Components · 10:30 AM', time: '1 hr ago', read: false },
+    { id: 3, kind: 'alert', title: 'Task Overdue', body: 'Follow up with Falcon Packaging', time: 'Yesterday', read: false },
+    { id: 4, kind: 'gps', title: 'Check-In Required', body: 'Start your workday to enable visits', time: 'Today 09:00', read: true },
+  ]);
+
+  const login = useCallback((email: string, password: string) => {
+    const found = DEMO_USERS.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+    if (!found) return 'No account found for that email.';
+    if (found.password !== password) return 'Incorrect password. Hint: demo123 (admin: admin123).';
+    const { password: _pw, ...session } = found;
+    setUser(session);
+    return null;
+  }, []);
+
+  const logout = useCallback(() => {
+    setUser(null);
+    setCheckIn({ checkedIn: false, since: null, fix: null, address: '' });
+  }, []);
+
+  const logAudit = useCallback((module: string, action: string, record: string) => {
+    const uname = user?.name ?? 'System';
+    setAudit(a => [{ id: ++aidRef.current, time: nowTime(), user: uname, module, action, record }, ...a].slice(0, 200));
+  }, [user]);
+
+  const notify = useCallback((kind: NotifKind, title: string, body: string) => {
+    setNotifications(n => [{ id: ++nidRef.current, kind, title, body, time: 'Just now', read: false }, ...n].slice(0, 50));
+  }, []);
+
+  const markAllRead = useCallback(() => {
+    setNotifications(ns => ns.map(n => ({ ...n, read: true })));
+  }, []);
+
+  const convertLead = useCallback((leadId: string, owner: string, customerStatus: 'Active' | 'Prospect') => {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return null;
+    const at = nowTime();
+    const customer: Customer = {
+      id: `cu${++idRef.current}`, code: nextCode('CUS', cusRef.current++), name: lead.company,
+      industry: '—', owner, phone: lead.phone, email: '', city: '—', status: customerStatus,
+      since: new Date().toISOString().slice(0, 10), revenue: 0,
+    };
+    const account: Account = {
+      id: `a${++acctRef.current}`, name: lead.company, industry: '—', owner,
+      contacts: 0, openOpps: 0, revenue: 0, city: '—',
+    };
+    setCustomers(cs => [customer, ...cs]);
+    setAccounts(as => [account, ...as]);
+    setLeads(ls => ls.map(l => l.id === leadId ? { ...l, status: 'Won' as const } : l));
+    setConversions(cv => [{ leadId, customerId: customer.id, accountId: account.id, at, by: user?.name ?? owner }, ...cv]);
+    logAudit('Lead', 'Converted → Customer + Account', lead.code);
+    notify('lead', 'Lead Converted', `${lead.company} is now a ${customerStatus} customer`);
+    return { customer, account };
+  }, [leads, user, logAudit, notify]);
+
+  const stageProb: Record<OppStage, number> = { Prospecting: 15, Qualification: 30, Proposal: 50, Negotiation: 70, Won: 100, Lost: 0 };
+  const setOppStage = useCallback((oppId: string, stage: OppStage) => {
+    setOpportunities(os => os.map(o => o.id === oppId ? { ...o, stage, probability: stageProb[stage] } : o));
+    const opp = opportunities.find(o => o.id === oppId);
+    if (opp) {
+      logAudit('Opportunity', `Stage → ${stage}`, opp.code);
+      if (stage === 'Won') notify('lead', 'Deal Won', `${opp.name} · ${opp.code}`);
+    }
+  }, [opportunities, logAudit, notify]);
+
+  const requestCheckIn = useCallback(async () => {
+    if (checkIn.checkedIn) return { ok: false, source: 'fallback' as const, message: 'Already checked in.' };
+    const { fix, source } = await locate();
+    setCheckIn({ checkedIn: true, since: new Date(), fix, address: `${fix.lat}, ${fix.lng}` });
+    logAudit('Tracking', 'Check-In', source === 'gps' ? `GPS ${fix.lat}, ${fix.lng}` : 'GPS unavailable — fallback fix');
+    notify('gps', 'Checked-In', `Workday started at ${nowTime()}`);
+    return { ok: true, source, message: source === 'gps' ? 'Checked in with GPS fix.' : 'GPS unavailable — checked in with fallback location.' };
+  }, [checkIn.checkedIn, logAudit, notify]);
+
+  const checkOut = useCallback(() => {
+    if (!checkIn.checkedIn) return;
+    const mins = checkIn.since ? Math.round((Date.now() - checkIn.since.getTime()) / 60000) : 0;
+    logAudit('Tracking', 'Check-Out', `Worked ${Math.floor(mins / 60)}h ${mins % 60}m`);
+    notify('gps', 'Checked-Out', `Workday ended at ${nowTime()}`);
+    setCheckIn({ checkedIn: false, since: null, fix: null, address: '' });
+  }, [checkIn, logAudit, notify]);
+
+  const recordVisit = useCallback(({ customer, contact, purpose }: { customer: string; contact: string; purpose: string }) => {
+    if (!checkIn.checkedIn) {
+      return { ok: false, message: 'Check-In required — you must check in before recording a customer visit.' };
+    }
+    const visit: Visit = {
+      id: `v${++idRef.current}`, employee: user?.name ?? '—', customer,
+      checkIn: nowTime(), checkOut: '—', durationMin: 0, purpose,
+      outcome: contact ? `With ${contact}` : 'In progress', distanceKm: 0,
+    };
+    setVisits(vs => [visit, ...vs]);
+    logAudit('Visit', 'Started', customer);
+    return { ok: true, message: `Visit with ${customer} started at ${visit.checkIn}.` };
+  }, [checkIn.checkedIn, user, logAudit]);
+
+  const value = useMemo<CRMStore>(() => ({
+    user, login, logout,
+    leads, accounts, customers, contacts: seedContacts, opportunities, visits, conversions,
+    audit, logAudit, notifications, notify, markAllRead,
+    convertLead, setOppStage, checkIn, requestCheckIn, checkOut, recordVisit,
+  }), [user, login, logout, leads, accounts, customers, opportunities, visits, conversions,
+      audit, logAudit, notifications, notify, markAllRead, convertLead, setOppStage,
+      checkIn, requestCheckIn, checkOut, recordVisit]);
+
+  return <CRMContext.Provider value={value}>{children}</CRMContext.Provider>;
+}
+
+export function useCRM(): CRMStore {
+  const ctx = useContext(CRMContext);
+  if (!ctx) throw new Error('useCRM must be used within CRMProvider');
+  return ctx;
+}
+
+// ---- RBAC (SRS access matrix) ----
+export function navAllowed(role: Role, page: string): boolean {
+  const adminOnly = ['companies', 'audit-logs'];
+  const noEmployee = ['companies', 'employees', 'customers', 'audit-logs', 'tracking'];
+  if (role === 'Super Admin' || role === 'Company Admin') return true;
+  if (role === 'Manager') return !adminOnly.includes(page);
+  return !noEmployee.includes(page);
+}
+
