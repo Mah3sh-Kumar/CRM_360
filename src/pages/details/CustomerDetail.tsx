@@ -14,7 +14,7 @@ export default function CustomerDetail({ id, onBack }: { id: string; onBack: () 
   const crm = useCRM();
   const customer = crm.customers.find(c => c.id === id);
   const [tab, setTab] = useState<Tab>('overview');
-  const [visitMsg, setVisitMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [visitMsg, setVisitMsg] = useState<{ ok: boolean; message: string } | null>(null);
   const [purpose, setPurpose] = useState('Requirement Discussion');
 
   if (!customer) return <div className="space-y-4"><EmptyRow text="Customer not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-[#007f24]">← Back to Customers</button></div>;
@@ -53,7 +53,7 @@ export default function CustomerDetail({ id, onBack }: { id: string; onBack: () 
 
       {visitMsg && (
         <div className={`rounded-lg border px-4 py-2.5 text-[12.5px] ${visitMsg.ok ? 'border-[#bcdcc6] bg-[#e3f0e7] text-[#0f6b2e]' : 'border-[#eadfbe] bg-[#faf3e0] text-[#8a6d1a]'}`}>
-          {visitMsg.ok ? '✓' : '⚠'} {visitMsg.text}
+          {visitMsg.ok ? '✓' : '⚠'} {visitMsg.message}
           {crm.checkIn.fix && <span className="ml-2 font-mono2 text-[10.5px]">GPS {crm.checkIn.fix.lat}, {crm.checkIn.fix.lng}</span>}
         </div>
       )}

@@ -1,6 +1,6 @@
 // src/pages/details/LeadDetail.tsx
 import { useState } from 'react';
-import { PageHeader, DataTable, StatusBadge, Mono } from '@/components/shared';
+import { DataTable, StatusBadge, Mono } from '@/components/shared';
 import type { Tone } from '@/components/shared';
 import { BackBar, DetailTabs, Field, EmptyRow } from '@/pages/details/shared';
 import { useCRM } from '@/store/crm';
@@ -36,7 +36,7 @@ export default function LeadDetail({ id, onBack, onNavigate }: {
     <div className="space-y-5">
       <BackBar onBack={onBack} kicker={`Leads · ${lead.code}`} title={lead.name}
         sub={`${lead.company} · via ${lead.source} · owned by ${lead.owner}`}
-        badges={[<StatusBadge key="s" label={lead.status} tone={tone(lead.status)} />, converted && <StatusBadge key="c" label="Converted" tone="ink" />]}
+        badges={[<StatusBadge key="s" label={lead.status} tone={tone(lead.status)} />, converted ? <StatusBadge key="c" label="Converted" tone="ink" /> : <></>]}
         actions={!converted && (
           <button onClick={() => setShowConvert(true)}
             className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#007f24] px-3 text-[12.5px] font-semibold text-white transition-colors hover:bg-[#0a6b20]">

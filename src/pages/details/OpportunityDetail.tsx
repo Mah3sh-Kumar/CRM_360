@@ -1,7 +1,7 @@
 // src/pages/details/OpportunityDetail.tsx — stage workflow + Won/Lost
 import { useState } from 'react';
 import { DataTable, StatusBadge, Mono } from '@/components/shared';
-import { BackBar, DetailTabs, Field, EmptyRow } from '@/pages/details/shared';
+import { BackBar, DetailTabs, EmptyRow } from '@/pages/details/shared';
 import { useCRM } from '@/store/crm';
 import { activities, tasks, meetings, fmtINR } from '@/data/mock';
 import type { OppStage } from '@/data/mock';

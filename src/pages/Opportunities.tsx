@@ -30,7 +30,6 @@ export default function Opportunities({ onOpen }: { onOpen: (id: string) => void
         {stages.map(st => {
           const opps = pool.filter(o => o.stage === st);
           const total = opps.reduce((s, o) => s + o.expectedRevenue, 0);
-          const closed = st === 'Won' || st === 'Lost';
           return (
             <div key={st} className="w-[268px] shrink-0">
               <div className={`mb-2 flex items-center justify-between rounded-md border px-3 py-2 ${st === 'Won' ? 'border-[#09352e] bg-[#09352e] text-white' : st === 'Lost' ? 'border-[#f0cdc4] bg-[#fbe9e6]' : 'border-border bg-card'}`}>
