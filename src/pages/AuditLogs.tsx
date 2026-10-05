@@ -1,13 +1,13 @@
 // src/pages/AuditLogs.tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, Mono } from '@/components/shared';
 import { useCRM } from '@/store/crm';
 
 export default function AuditLogs() {
   const { audit } = useCRM();
   const [filter, setFilter] = useState('All');
-  const modules = ['All', ...Array.from(new Set(audit.map(a => a.module)))];
-  const rows = audit.filter(a => filter === 'All' || a.module === filter);
+  const modules = useMemo(() => ['All', ...Array.from(new Set(audit.map(a => a.module)))], [audit]);
+  const rows = useMemo(() => audit.filter(a => filter === 'All' || a.module === filter), [audit, filter]);
 
   return (
     <div className="space-y-5">

@@ -1,6 +1,6 @@
 // src/pages/details/AccountDetail.tsx — Account 360 hub
 import { useState } from 'react';
-import { DataTable, StatusBadge, Mono } from '@/components/shared';
+import { DataTable, StatusBadge, Mono, LoadingState, ErrorState } from '@/components/shared';
 import { BackBar, DetailTabs, EmptyRow } from '@/pages/details/shared';
 import { useCRM } from '@/store/crm';
 import { activities, tasks, meetings, fmtINR } from '@/data/mock';
@@ -12,7 +12,9 @@ export default function AccountDetail({ id, onBack }: { id: string; onBack: () =
   const account = crm.accounts.find(a => a.id === id);
   const [tab, setTab] = useState<Tab>('contacts');
 
-  if (!account) return <div className="space-y-4"><EmptyRow text="Account not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-[#007f24]">← Back to Accounts</button></div>;
+  if (crm.loading.accounts && !account) return <LoadingState message="Loading account details..." />;
+  if (crm.error.accounts) return <ErrorState title="Failed to load account" message={crm.error.accounts} onRetry={crm.fetchAccounts} />;
+  if (!account) return <div className="space-y-4"><EmptyRow text="Account not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-primary">← Back to Accounts</button></div>;
 
   const contacts = crm.contacts.filter(c => c.account === account.name);
   const opps = crm.opportunities.filter(o => o.account === account.name);
@@ -36,7 +38,7 @@ export default function AccountDetail({ id, onBack }: { id: string; onBack: () =
         sub={`${account.industry} · ${account.city} · owned by ${account.owner}`}
         badges={[<StatusBadge key="h" label={account.openOpps > 0 ? 'Engaged' : 'Quiet'} tone={account.openOpps > 0 ? 'green' : 'gray'} />]} />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-border bg-card p-4"><div className="kicker text-muted-foreground">Lifetime Revenue</div><div className="font-display mt-1 text-[22px] font-semibold">{account.revenue ? fmtINR(account.revenue) : '—'}</div></div>
         <div className="rounded-lg border border-border bg-card p-4"><div className="kicker text-muted-foreground">Open Opportunities</div><div className="font-display mt-1 text-[22px] font-semibold">{account.openOpps}</div></div>
         <div className="rounded-lg border border-border bg-card p-4"><div className="kicker text-muted-foreground">Contacts</div><div className="font-display mt-1 text-[22px] font-semibold">{contacts.length || account.contacts}</div></div>

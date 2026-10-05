@@ -1,36 +1,135 @@
-import { useState } from 'react';
-import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, Mono } from '@/components/shared';
+import { useState, useEffect, useMemo } from 'react';
+import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, Mono, ErrorState } from '@/components/shared';
 import type { Tone } from '@/components/shared';
-import { tasks } from '@/data/mock';
 import type { TaskStatus, TaskPriority } from '@/data/mock';
+import { useCRM } from '@/store/crm';
+import TaskModal from '@/components/TaskModal';
+import ReassignTaskModal from '@/components/ReassignTaskModal';
+import { Edit2, UserPlus, XCircle, Trash2, CheckCircle2 } from 'lucide-react';
 
 const pTone = (p: TaskPriority): Tone => p === 'Critical' ? 'red' : p === 'High' ? 'amber' : p === 'Medium' ? 'blue' : 'gray';
 const sTone = (s: TaskStatus): Tone => s === 'Completed' ? 'ink' : s === 'Cancelled' ? 'red' : s === 'In Progress' ? 'green' : 'sage';
 
 export default function Tasks() {
+  const { tasks, fetchTasks, completeTask, cancelTask, deleteTask, can, user, loading, error } = useCRM();
   const [f, setF] = useState('All');
-  const rows = tasks.filter(t => f === 'All' || t.status === f);
+  
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [taskIdToEdit, setTaskIdToEdit] = useState<string | undefined>(undefined);
+  
+  const [reassignModalOpen, setReassignModalOpen] = useState(false);
+  const [taskIdToReassign, setTaskIdToReassign] = useState<string | undefined>(undefined);
+  
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const handleCreate = () => {
+    setTaskIdToEdit(undefined);
+    setTaskModalOpen(true);
+  };
+
+  const handleEdit = (id: string) => {
+    setTaskIdToEdit(id);
+    setTaskModalOpen(true);
+  };
+
+  const handleReassign = (id: string) => {
+    setTaskIdToReassign(id);
+    setReassignModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this task?')) {
+      await deleteTask(id);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    if (confirm('Are you sure you want to cancel this task?')) {
+      await cancelTask(id);
+    }
+  };
+
+  const rows = useMemo(() => tasks.filter(t => f === 'All' || t.status === f), [tasks, f]);
+  
   return (
     <div className="space-y-5">
       <PageHeader kicker="CRM Operations · Module 26" title="Tasks"
         sub="Lifecycle: Open → In Progress → Completed (or Cancelled). Reassignment retains previous assignee in history and notifies the new one."
-        action={<NewButton label="Create Task" />} />
+        action={can('CREATE', 'TASK') && <NewButton label="Create Task" onClick={handleCreate} />} />
+      
       <Toolbar placeholder="Search tasks…">
-        {['All', 'Open', 'In Progress', 'Completed', 'Cancelled'].map(s => <span key={s} onClick={() => setF(s)}><FilterChip label={s} active={f === s} /></span>)}
+        {['All', 'Open', 'In Progress', 'Completed', 'Cancelled'].map(s => (
+          <span key={s} onClick={() => setF(s)}>
+            <FilterChip label={s} active={f === s} />
+          </span>
+        ))}
       </Toolbar>
-      <DataTable
-        head={['Task', 'Linked To', 'Assignee', 'Priority', 'Status', 'Due', 'Action']}
-        rows={rows.map(t => [
-          <span className="font-medium">{t.title}</span>,
-          <Mono className="text-muted-foreground">{t.related}</Mono>,
-          t.assignee,
-          <StatusBadge label={t.priority} tone={pTone(t.priority)} />,
-          <StatusBadge label={t.status} tone={sTone(t.status)} />,
-          <Mono className={t.status !== 'Completed' && t.due <= '2026-10-02' ? 'font-semibold text-[#b03a26]' : 'text-muted-foreground'}>{t.due.slice(5)}</Mono>,
-          t.status === 'Completed'
-            ? <Mono className="text-muted-foreground">done</Mono>
-            : <button className="rounded-md border border-input px-2 py-1 font-mono2 text-[10px] font-medium hover:border-[#007f24] hover:text-[#007f24] transition-colors">MARK COMPLETE</button>,
-        ])}
+      
+      {error.tasks ? (
+        <ErrorState title="Failed to load tasks" message={error.tasks} onRetry={fetchTasks} />
+      ) : (
+        <DataTable
+          loading={loading.tasks}
+          head={['Task', 'Linked To', 'Assignee', 'Priority', 'Status', 'Due', 'Actions']}
+          rows={rows.map(t => {
+            const isClosed = t.status === 'Completed' || t.status === 'Cancelled';
+            
+            return [
+              <span className="font-medium">{t.title}</span>,
+              <Mono className="text-muted-foreground">{t.related}</Mono>,
+              t.assignee,
+              <StatusBadge label={t.priority as TaskPriority} tone={pTone(t.priority as TaskPriority)} />,
+              <StatusBadge label={t.status as TaskStatus} tone={sTone(t.status as TaskStatus)} />,
+              <Mono className={!isClosed && t.due <= new Date().toISOString().split('T')[0] ? 'font-semibold text-destructive' : 'text-muted-foreground'}>
+                {t.due.slice(5) || '—'}
+              </Mono>,
+              <div className="flex items-center gap-1.5">
+                {!isClosed && can('EDIT', 'TASK', t) && (
+                  <button title="Edit" onClick={() => handleEdit(t.id)} className="text-muted-foreground hover:text-foreground">
+                    <Edit2 className="size-3.5" />
+                  </button>
+                )}
+                {!isClosed && can('EDIT', 'TASK', t) && user?.role !== 'Employee' && (
+                  <button title="Reassign" onClick={() => handleReassign(t.id)} className="text-muted-foreground hover:text-foreground">
+                    <UserPlus className="size-3.5" />
+                  </button>
+                )}
+                {!isClosed && can('EDIT', 'TASK', t) && (
+                  <button title="Complete" onClick={() => completeTask(t.id, "Completed")} className="text-muted-foreground hover:text-primary">
+                    <CheckCircle2 className="size-3.5" />
+                  </button>
+                )}
+                {!isClosed && can('EDIT', 'TASK', t) && user?.role !== 'Employee' && (
+                  <button title="Cancel" onClick={() => handleCancel(t.id)} className="text-muted-foreground hover:text-destructive">
+                    <XCircle className="size-3.5" />
+                  </button>
+                )}
+                {can('DELETE', 'TASK', t) && user?.role === 'Super Admin' && (
+                  <button title="Delete" onClick={() => handleDelete(t.id)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="size-3.5" />
+                  </button>
+                )}
+                {isClosed && (
+                  <Mono className="text-[10px] text-muted-foreground uppercase">{t.status}</Mono>
+                )}
+              </div>
+            ];
+          })}
+        />
+      )}
+
+      <TaskModal 
+        open={taskModalOpen} 
+        onClose={() => setTaskModalOpen(false)} 
+        taskId={taskIdToEdit} 
+      />
+      
+      <ReassignTaskModal 
+        open={reassignModalOpen} 
+        onClose={() => setReassignModalOpen(false)} 
+        taskId={taskIdToReassign} 
       />
     </div>
   );

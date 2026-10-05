@@ -1,33 +1,37 @@
 // src/App.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Funnel, Building2, Users, HandCoins, ListChecks, CheckSquare,
   CalendarDays, MapPin, Footprints, Landmark, UserCog, Contact2, BarChart3,
-  Search, Bell, ChevronDown, Timer, LogIn, LogOut, Compass, ShieldCheck,
+  Search, Bell, ChevronDown, Timer, LogIn, LogOut, Compass, ShieldCheck, Menu, X, Loader2
 } from 'lucide-react';
 import { CRMProvider, useCRM, navAllowed } from '@/store/crm';
+import { TrackingProvider, useTracking } from '@/store/tracking';
 import { StatusBadge } from '@/components/shared';
-import Dashboard from '@/pages/Dashboard';
-import Leads from '@/pages/Leads';
-import Accounts from '@/pages/Accounts';
-import Contacts from '@/pages/Contacts';
-import Opportunities from '@/pages/Opportunities';
-import Activities from '@/pages/Activities';
-import Tasks from '@/pages/Tasks';
-import Meetings from '@/pages/Meetings';
-import Tracking from '@/pages/Tracking';
-import Visits from '@/pages/Visits';
-import Masters from '@/pages/Masters';
-import Reports from '@/pages/Reports';
 import Login from '@/pages/Login';
-import AuditLogs from '@/pages/AuditLogs';
 import GlobalSearch from '@/components/GlobalSearch';
 import NotificationsPanel from '@/components/NotificationsPanel';
-import LeadDetail from '@/pages/details/LeadDetail';
-import AccountDetail from '@/pages/details/AccountDetail';
-import CustomerDetail from '@/pages/details/CustomerDetail';
-import OpportunityDetail from '@/pages/details/OpportunityDetail';
+import NotFound from '@/pages/NotFound';
+
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Leads = lazy(() => import('@/pages/Leads'));
+const Accounts = lazy(() => import('@/pages/Accounts'));
+const Contacts = lazy(() => import('@/pages/Contacts'));
+const Opportunities = lazy(() => import('@/pages/Opportunities'));
+const Activities = lazy(() => import('@/pages/Activities'));
+const Tasks = lazy(() => import('@/pages/Tasks'));
+const Meetings = lazy(() => import('@/pages/Meetings'));
+const Tracking = lazy(() => import('@/pages/Tracking'));
+const Visits = lazy(() => import('@/pages/Visits'));
+const Masters = lazy(() => import('@/pages/Masters'));
+const Reports = lazy(() => import('@/pages/Reports'));
+const AuditLogs = lazy(() => import('@/pages/AuditLogs'));
+const LeadDetail = lazy(() => import('@/pages/details/LeadDetail'));
+const AccountDetail = lazy(() => import('@/pages/details/AccountDetail'));
+const CustomerDetail = lazy(() => import('@/pages/details/CustomerDetail'));
+const OpportunityDetail = lazy(() => import('@/pages/details/OpportunityDetail'));
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams, NavLink, Outlet } from 'react-router-dom';
 
 type NavItem = { id: string; label: string; icon: React.ElementType };
 type NavGroup = { group: string; items: NavItem[] };
@@ -68,73 +72,135 @@ const fmtDur = (ms: number) => {
   return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 };
 
+function TimerDisplay({ checkInTime }: { checkInTime: string }) {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span className="ml-auto flex items-center gap-1 font-mono2 text-[10px]">
+      <Timer className="size-3" aria-hidden="true" />
+      {fmtDur(now.getTime() - new Date(checkInTime + 'Z').getTime())}
+    </span>
+  );
+}
+
+function ProtectedRoute({ module, children }: { module?: string; children: React.ReactNode }) {
+  const crm = useCRM();
+
+  if (crm.isInitializing) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!crm.user) return <Navigate to="/login" replace />;
+  if (module && !navAllowed(crm.user.role, module)) {
+    return (
+      <div className="flex h-[80vh] flex-col items-center justify-center space-y-4">
+        <h1 className="font-display text-4xl font-bold tracking-tight text-red-500">403</h1>
+        <p className="text-muted-foreground">Access Denied. You do not have permission to view this page.</p>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
+function LeadDetailWrapper() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  return <LeadDetail id={id!} onBack={() => navigate('/leads')} onNavigate={(page, newId) => {
+    let path = `/${page}`;
+    if (page === 'customer' && newId) path = `/customers/${newId}`;
+    if (page === 'account' && newId) path = `/accounts/${newId}`;
+    navigate(path);
+  }} />;
+}
+
+function AccountDetailWrapper() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  return <AccountDetail id={id!} onBack={() => navigate('/accounts')} />;
+}
+
+function CustomerDetailWrapper() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  return <CustomerDetail id={id!} onBack={() => navigate('/customers')} />;
+}
+
+function OpportunityDetailWrapper() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  return <OpportunityDetail id={id!} onBack={() => navigate('/opportunities')} />;
+}
+
 function Shell() {
   const crm = useCRM();
-  const [route, setRoute] = useState<{ page: string; id?: string }>({ page: 'dashboard' });
+  const { trackingStatus, checkIn, checkOut } = useTracking();
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [geoMsg, setGeoMsg] = useState('');
-  const [now, setNow] = useState(new Date());
+  
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearchOpen(true); }
-      if (e.key === 'Escape') { setSearchOpen(false); setNotifOpen(false); setMenuOpen(false); }
+      if (e.key === 'Escape') { setSearchOpen(false); setNotifOpen(false); setMenuOpen(false); setMobileNavOpen(false); }
     };
     window.addEventListener('keydown', onKey);
-    return () => { clearInterval(t); window.removeEventListener('keydown', onKey); };
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  if (!crm.user) return <Login />;
-  const user = crm.user;
+  const user = crm.user!;
 
   const go = (page: string, id?: string) => {
-    if (!navAllowed(user.role, page)) return;
-    setRoute({ page, id });
+    let path = `/${page}`;
+    if (page === 'lead' && id) path = `/leads/${id}`;
+    if (page === 'account' && id) path = `/accounts/${id}`;
+    if (page === 'customer' && id) path = `/customers/${id}`;
+    if (page === 'opportunity' && id) path = `/opportunities/${id}`;
+    
+    navigate(path);
     setMenuOpen(false);
+    setMobileNavOpen(false);
   };
 
-  const page = navAllowed(user.role, route.page) ? route.page : 'dashboard';
   const unread = crm.notifications.filter(n => !n.read).length;
-
-  const render = () => {
-    switch (page) {
-      case 'dashboard': return <Dashboard go={(p: string) => go(p)} />;
-      case 'leads': return <Leads onOpen={(id: string) => go('lead', id)} />;
-      case 'lead': return route.id ? <LeadDetail id={route.id} onBack={() => go('leads')} onNavigate={go} /> : <Leads onOpen={(id: string) => go('lead', id)} />;
-      case 'accounts': return <Accounts onOpen={(id: string) => go('account', id)} />;
-      case 'account': return route.id ? <AccountDetail id={route.id} onBack={() => go('accounts')} /> : <Accounts onOpen={(id: string) => go('account', id)} />;
-      case 'contacts': return <Contacts />;
-      case 'opportunities': return <Opportunities onOpen={(id: string) => go('opportunity', id)} />;
-      case 'opportunity': return route.id ? <OpportunityDetail id={route.id} onBack={() => go('opportunities')} /> : <Opportunities onOpen={(id: string) => go('opportunity', id)} />;
-      case 'activities': return <Activities />;
-      case 'tasks': return <Tasks />;
-      case 'meetings': return <Meetings />;
-      case 'tracking': return <Tracking />;
-      case 'visits': return <Visits />;
-      case 'companies': return <Masters tab="companies" />;
-      case 'employees': return <Masters tab="employees" />;
-      case 'customers': return route.id ? <CustomerDetail id={route.id} onBack={() => go('customers')} /> : <Masters tab="customers" onOpen={(id: string) => go('customer', id)} />;
-      case 'reports': return <Reports />;
-      case 'audit-logs': return <AuditLogs />;
-      default: return <Dashboard go={(p: string) => go(p)} />;
-    }
-  };
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Mobile Sidebar Backdrop */}
+      {mobileNavOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden" 
+          onClick={() => setMobileNavOpen(false)} 
+        />
+      )}
+      
       {/* Sidebar */}
-      <aside className="sticky top-0 flex h-screen w-[228px] shrink-0 flex-col border-r border-border bg-[#0c231e] text-[#cfe3d6]">
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-50 flex h-screen w-[228px] shrink-0 flex-col border-r border-border bg-sidebar text-sidebar-foreground transition-transform duration-200 ease-in-out md:sticky md:top-0 md:translate-x-0",
+        mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
         <div className="flex items-center gap-2.5 px-5 pt-5 pb-6">
-          <div className="flex size-8 items-center justify-center rounded-md bg-[#85c093]">
-            <Compass className="size-4.5 text-[#0c231e]" strokeWidth={2.4} />
+          <div className="flex size-8 items-center justify-center rounded-md bg-sage">
+            <Compass className="size-4.5 text-sidebar" strokeWidth={2.4} />
           </div>
           <div>
             <div className="font-display text-[15px] font-semibold tracking-tight text-white leading-none">CRM 360</div>
-            <div className="kicker mt-1 text-[#6f9480]">{user.role}</div>
+            <div className="kicker mt-1 text-sidebar-accent">{user.role}</div>
           </div>
+          <button aria-label="Close menu" className="ml-auto flex size-7 items-center justify-center rounded-md text-sidebar-border hover:bg-white/10 md:hidden" onClick={() => setMobileNavOpen(false)}>
+            <X className="size-4" aria-hidden="true" />
+          </button>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
           {NAV.map(g => {
@@ -142,22 +208,27 @@ function Shell() {
             if (!items.length) return null;
             return (
               <div key={g.group} className="mb-4">
-                <div className="kicker px-2 pb-1.5 text-[#5d8171]">{g.group}</div>
+                <div className="kicker px-2 pb-1.5 text-sidebar-border">{g.group}</div>
                 {items.map(it => {
-                  const active = page === it.id || (it.id === 'customers' && page === 'customer')
-                    || (it.id === 'leads' && page === 'lead') || (it.id === 'accounts' && page === 'account')
-                    || (it.id === 'opportunities' && page === 'opportunity');
+                  const active = location.pathname.startsWith(`/${it.id}`);
                   const Icon = it.icon;
                   return (
-                    <button key={it.id} onClick={() => go(it.id)}
+                    <NavLink
+                      key={it.id}
+                      to={`/${it.id}`}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setMobileNavOpen(false);
+                      }}
                       className={cn(
                         'group mb-0.5 flex w-full items-center gap-2.5 rounded-md px-2 py-[7px] text-[13px] font-medium transition-colors',
-                        active ? 'bg-[#85c093] text-[#0c231e]' : 'text-[#a9c4b2] hover:bg-white/5 hover:text-white'
-                      )}>
+                        active ? 'bg-sage text-sidebar' : 'text-sidebar-foreground hover:bg-white/5 hover:text-white'
+                      )}
+                    >
                       <Icon className="size-4 shrink-0" strokeWidth={2} />
                       {user.role === 'Employee' && ['leads', 'accounts', 'contacts', 'opportunities', 'activities', 'tasks', 'meetings'].includes(it.id) ? `My ${it.label}` : it.label}
-                      {active && <span className="ml-auto size-1.5 rounded-full bg-[#0c231e]" />}
-                    </button>
+                      {active && <span className="ml-auto size-1.5 rounded-full bg-sidebar" />}
+                    </NavLink>
                   );
                 })}
               </div>
@@ -166,48 +237,55 @@ function Shell() {
         </nav>
         <div className="border-t border-white/10 p-3">
           <button
-            onClick={async () => {
-              if (crm.checkIn.checkedIn) { crm.checkOut(); setGeoMsg(''); }
-              else { const r = await crm.requestCheckIn(); setGeoMsg(r.message); }
+            onClick={() => {
+              if (trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) { 
+                navigator.geolocation.getCurrentPosition((pos) => checkOut(pos.coords.latitude, pos.coords.longitude, 'GPS'));
+              }
+              else { 
+                navigator.geolocation.getCurrentPosition((pos) => checkIn(pos.coords.latitude, pos.coords.longitude, 'GPS'), () => setGeoMsg('GPS Required'));
+              }
             }}
             className={cn('flex w-full items-center gap-2 rounded-md px-3 py-2 text-[12.5px] font-semibold transition-colors',
-              crm.checkIn.checkedIn ? 'bg-[#123a30] text-[#8fd4a8]' : 'bg-[#007f24] text-white hover:bg-[#0a6b20]')}>
-            {crm.checkIn.checkedIn ? <LogOut className="size-4" /> : <LogIn className="size-4" />}
-            {crm.checkIn.checkedIn ? 'Check-Out' : 'Check-In'}
-            {crm.checkIn.checkedIn && crm.checkIn.since &&
-              <span className="ml-auto flex items-center gap-1 font-mono2 text-[10px]"><Timer className="size-3" />{fmtDur(now.getTime() - crm.checkIn.since.getTime())}</span>}
+              (trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? 'bg-sidebar-accent text-sage-light' : 'bg-primary text-white hover:bg-primary-hover')}>
+            {(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? <LogOut className="size-4" aria-hidden="true" /> : <LogIn className="size-4" aria-hidden="true" />}
+            {(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? 'Check-Out' : 'Check-In'}
+            {(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) && trackingStatus.check_in_time &&
+              <TimerDisplay checkInTime={trackingStatus.check_in_time} />}
           </button>
-          {crm.checkIn.checkedIn && crm.checkIn.fix && (
-            <div className="mt-1.5 flex items-center gap-1 px-1 font-mono2 text-[9.5px] text-[#6f9480]">
-              <MapPin className="size-3" /> GPS active · {crm.checkIn.fix.lat}, {crm.checkIn.fix.lng}
-            </div>
-          )}
-          {geoMsg && !crm.checkIn.checkedIn && <div className="mt-1.5 px-1 font-mono2 text-[9.5px] text-[#c9b458]">{geoMsg}</div>}
+          {geoMsg && !(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) && <div className="mt-1.5 px-1 font-mono2 text-[9.5px] text-warning">{geoMsg}</div>}
         </div>
       </aside>
-
+      
       {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-border bg-background/85 px-6 backdrop-blur">
-          <button onClick={() => setSearchOpen(true)} className="relative w-full max-w-sm text-left">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <span className="flex h-9 w-full items-center rounded-md border border-input bg-card pl-9 pr-12 text-[13px] text-muted-foreground">Search leads, accounts, opportunities…</span>
-            <kbd className="kicker absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-muted-foreground">Ctrl K</kbd>
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border bg-background/85 px-4 backdrop-blur md:gap-4 md:px-6">
+          <button aria-label="Open menu" aria-expanded={mobileNavOpen} aria-controls="mobile-sidebar" className="flex size-9 items-center justify-center rounded-md border border-input bg-card text-muted-foreground md:hidden" onClick={() => setMobileNavOpen(true)}>
+            <Menu className="size-4" aria-hidden="true" />
           </button>
-          <div className="ml-auto flex items-center gap-3">
-            <StatusBadge label={crm.checkIn.checkedIn ? 'Checked-In' : 'Checked-Out'} tone={crm.checkIn.checkedIn ? 'green' : 'gray'} />
-            <button onClick={() => setNotifOpen(o => !o)} className="relative flex size-9 items-center justify-center rounded-md border border-input bg-card transition-colors hover:bg-secondary">
-              <Bell className="size-4" />
-              {unread > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-[#b03a26]" />}
+          <button aria-label="Search" onClick={() => setSearchOpen(true)} className="relative flex-1 text-left md:w-full md:max-w-sm md:flex-none">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <span className="flex h-9 w-full items-center rounded-md border border-input bg-card pl-9 pr-12 text-[13px] text-muted-foreground truncate">
+              <span className="hidden md:inline">Search leads, accounts, opportunities…</span>
+              <span className="md:hidden">Search...</span>
+            </span>
+            <kbd className="kicker absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-muted-foreground md:block">Ctrl K</kbd>
+          </button>
+          <div className="ml-auto flex items-center gap-2 md:gap-3">
+            <div className="hidden sm:block">
+              <StatusBadge label={(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? 'Checked-In' : 'Checked-Out'} tone={(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? 'green' : 'gray'} />
+            </div>
+            <button aria-label="Notifications" aria-expanded={notifOpen} onClick={() => setNotifOpen(o => !o)} className="relative flex size-9 items-center justify-center rounded-md border border-input bg-card transition-colors hover:bg-secondary">
+              <Bell className="size-4" aria-hidden="true" />
+              {unread > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-destructive" />}
             </button>
             <div className="relative">
-              <button onClick={() => setMenuOpen(o => !o)} className="flex items-center gap-2.5 rounded-md border border-input bg-card py-1.5 pl-1.5 pr-2.5 transition-colors hover:bg-secondary">
-                <div className="flex size-6 items-center justify-center rounded bg-[#09352e] font-mono2 text-[10px] font-semibold text-[#a8d8ba]">{initials(user.name)}</div>
-                <div className="text-left leading-tight">
+              <button aria-label="User menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(o => !o)} className="flex items-center gap-2 rounded-md border border-input bg-card py-1.5 pl-1.5 pr-1.5 transition-colors hover:bg-secondary md:gap-2.5 md:pr-2.5">
+                <div className="flex size-6 shrink-0 items-center justify-center rounded bg-ink font-mono2 text-[10px] font-semibold text-sage-light">{initials(user.name)}</div>
+                <div className="hidden text-left leading-tight md:block">
                   <div className="text-[12px] font-semibold">{user.name}</div>
-                  <div className="kicker text-muted-foreground">{user.role} · {user.designation}</div>
+                  <div className="kicker text-muted-foreground truncate max-w-[120px]">{user.role} · {user.designation}</div>
                 </div>
-                <ChevronDown className="size-3.5 text-muted-foreground" />
+                <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden="true" />
               </button>
               {menuOpen && (
                 <>
@@ -219,7 +297,7 @@ function Shell() {
                       <div className="font-mono2 text-[10.5px] text-muted-foreground">{user.company} · {user.code}</div>
                     </div>
                     <button onClick={() => crm.logout()}
-                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[12.5px] font-medium text-[#b03a26] transition-colors hover:bg-[#fbe9e6]">
+                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[12.5px] font-medium text-destructive transition-colors hover:bg-destructive-bg">
                       <LogOut className="size-3.5" /> Logout
                     </button>
                   </div>
@@ -228,7 +306,11 @@ function Shell() {
             </div>
           </div>
         </header>
-        <main className="flex-1 px-6 py-6">{render()}</main>
+        <main className="flex-1 px-4 py-4 md:px-6 md:py-6">
+          <Suspense fallback={<div className="flex h-[80vh] flex-col items-center justify-center space-y-4"><Loader2 className="size-8 animate-spin text-muted-foreground" /><p className="text-muted-foreground">Loading...</p></div>}>
+            <Outlet />
+          </Suspense>
+        </main>
       </div>
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} onNavigate={go} />
@@ -237,10 +319,54 @@ function Shell() {
   );
 }
 
+function MainApp() {
+  const navigate = useNavigate();
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route element={<ProtectedRoute><Shell /></ProtectedRoute>}>
+        <Route path="dashboard" element={<ProtectedRoute module="dashboard"><Dashboard go={(p: string) => navigate(`/${p}`)} /></ProtectedRoute>} />
+        
+        <Route path="leads" element={<ProtectedRoute module="leads"><Leads onOpen={(id: string) => navigate(`/leads/${id}`)} /></ProtectedRoute>} />
+        <Route path="leads/:id" element={<ProtectedRoute module="leads"><LeadDetailWrapper /></ProtectedRoute>} />
+        
+        <Route path="accounts" element={<ProtectedRoute module="accounts"><Accounts onOpen={(id: string) => navigate(`/accounts/${id}`)} /></ProtectedRoute>} />
+        <Route path="accounts/:id" element={<ProtectedRoute module="accounts"><AccountDetailWrapper /></ProtectedRoute>} />
+        
+        <Route path="contacts" element={<ProtectedRoute module="contacts"><Contacts /></ProtectedRoute>} />
+        
+        <Route path="opportunities" element={<ProtectedRoute module="opportunities"><Opportunities onOpen={(id: string) => navigate(`/opportunities/${id}`)} /></ProtectedRoute>} />
+        <Route path="opportunities/:id" element={<ProtectedRoute module="opportunities"><OpportunityDetailWrapper /></ProtectedRoute>} />
+        
+        <Route path="activities" element={<ProtectedRoute module="activities"><Activities /></ProtectedRoute>} />
+        <Route path="tasks" element={<ProtectedRoute module="tasks"><Tasks /></ProtectedRoute>} />
+        <Route path="meetings" element={<ProtectedRoute module="meetings"><Meetings /></ProtectedRoute>} />
+        <Route path="tracking" element={<ProtectedRoute module="tracking"><Tracking /></ProtectedRoute>} />
+        <Route path="visits" element={<ProtectedRoute module="visits"><Visits /></ProtectedRoute>} />
+        
+        <Route path="companies" element={<ProtectedRoute module="companies"><Masters tab="companies" /></ProtectedRoute>} />
+        <Route path="employees" element={<ProtectedRoute module="employees"><Masters tab="employees" /></ProtectedRoute>} />
+        <Route path="customers" element={<ProtectedRoute module="customers"><Masters tab="customers" onOpen={(id: string) => navigate(`/customers/${id}`)} /></ProtectedRoute>} />
+        <Route path="customers/:id" element={<ProtectedRoute module="customers"><CustomerDetailWrapper /></ProtectedRoute>} />
+        
+        <Route path="reports" element={<ProtectedRoute module="reports"><Reports /></ProtectedRoute>} />
+        <Route path="audit-logs" element={<ProtectedRoute module="audit-logs"><AuditLogs /></ProtectedRoute>} />
+        
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <CRMProvider>
-      <Shell />
+      <TrackingProvider>
+        <BrowserRouter>
+          <MainApp />
+        </BrowserRouter>
+      </TrackingProvider>
     </CRMProvider>
   );
 }

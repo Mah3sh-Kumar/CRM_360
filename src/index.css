@@ -14,18 +14,49 @@
     --popover-foreground: 168 62% 12%;
     --primary: 135 100% 25%;
     --primary-foreground: 60 9% 97%;
+    --primary-hover: 132 83% 23%;
     --secondary: 150 20% 93%;
     --secondary-foreground: 168 62% 12%;
     --muted: 150 14% 93%;
-    --muted-foreground: 170 8% 46%;
+    --muted-foreground: 170 8% 38%;
+    --muted-bg: 108 27% 96%;
     --accent: 133 29% 64%;
     --accent-foreground: 168 62% 12%;
     --destructive: 4 72% 46%;
     --destructive-foreground: 60 9% 97%;
+    --destructive-bg: 9 72% 94%;
+    --destructive-border: 11 58% 85%;
     --border: 150 12% 87%;
     --input: 150 12% 87%;
     --ring: 135 100% 25%;
     --radius: 0.5rem;
+
+    /* Semantic Additions */
+    --success: 140 75% 24%;
+    --success-bg: 139 39% 91%;
+    --success-border: 139 31% 80%;
+    
+    --warning: 44 68% 28%;
+    --warning-bg: 43 72% 93%;
+    --warning-border: 43 45% 82%;
+    
+    --info: 211 48% 34%;
+    --info-bg: 213 53% 95%;
+    --info-border: 212 40% 86%;
+
+    --neutral: 60 4% 40%;
+    --neutral-bg: 60 14% 96%;
+    --neutral-border: 60 10% 86%;
+
+    --link: 153 79% 20%;
+    
+    --sidebar-background: 168 47% 15%;
+    --sidebar-foreground: 154 13% 85%;
+    --sidebar-border: 154 22% 51%;
+    --sidebar-accent: 154 22% 51%;
+    
+    --ink: 168 62% 12%;
+    --sage: 133 29% 64%;
   }
 }
 
@@ -38,10 +69,10 @@
   }
   .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; }
   .font-mono2 { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
-  ::selection { background: #09352e; color: #f7f7f0; }
+  ::selection { background: hsl(var(--ink)); color: hsl(var(--primary-foreground)); }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #85c093; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--sage)); border-radius: 8px; }
 }
 
 @layer utilities {
