@@ -36,15 +36,15 @@ export default function Opportunities({ onOpen }: { onOpen: (id: string) => void
         <LoadingState message="Loading opportunities..." />
       ) : (
         <>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 pb-2">
             {stages.map(st => {
               const opps = pool.filter(o => o.stage === st);
               const total = opps.reduce((s, o) => s + o.expectedRevenue, 0);
               return (
-                <div key={st} className="w-[268px] shrink-0">
+                <div key={st} className="min-w-0">
                   <div className={`mb-2 flex items-center justify-between rounded-md border px-3 py-2 ${st === 'Won' ? 'border-ink bg-ink text-white' : st === 'Lost' ? 'border-destructive-border bg-destructive-bg' : 'border-border bg-card'}`}>
                     <div className="kicker">{st}</div>
-                    <Mono className={st === 'Won' ? 'text-sage-light' : st === 'Lost' ? 'text-destructive' : 'text-muted-foreground'}>{opps.length} · {fmtINR(total)}</Mono>
+                    <Mono className={st === 'Won' ? 'text-primary-foreground' : st === 'Lost' ? 'text-destructive' : 'text-muted-foreground'}>{opps.length} · {fmtINR(total)}</Mono>
                   </div>
                   <div className="space-y-2">
                     {opps.map(o => (

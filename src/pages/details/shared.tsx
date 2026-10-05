@@ -22,7 +22,7 @@ export function BackBar({ onBack, kicker, title, sub, badges, actions }: {
           {sub && <p className="mt-1.5 text-[12.5px] text-muted-foreground">{sub}</p>}
           {badges && <div className="mt-2.5 flex flex-wrap items-center gap-1.5">{badges}</div>}
         </div>
-        <div className="flex w-full shrink-0 items-center gap-2 overflow-x-auto sm:w-auto">{actions}</div>
+        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto">{actions}</div>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import re
 LEAD_STATUSES = ["New", "Contacted", "Qualified", "Proposal Sent", "Negotiation", "Won", "Lost"]
 LEAD_SOURCES = [
     "Website", "Referral", "Social Media", "Advertisement",
-    "Walk-In", "Cold Call", "Existing Customer", "Employee Reference", "Other"
+    "Walk-In", "Cold Call", "Existing Customer", "Employee Reference", "Trade Show", "Partner", "Other"
 ]
 
 class LeadBase(BaseModel):
@@ -26,8 +26,8 @@ class LeadBase(BaseModel):
 
     @validator('mobile_number')
     def validate_mobile_number(cls, v):
-        if v and not re.match(r'^\d+$', v):
-            raise ValueError('Mobile Number must contain only digits')
+        if v and not re.match(r'^\+?[\d\-\s]+$', v):
+            raise ValueError('Mobile Number must contain only digits, +, -, and spaces')
         return v
 
     @validator('status')
@@ -61,8 +61,8 @@ class LeadUpdate(BaseModel):
 
     @validator('mobile_number')
     def validate_mobile_number(cls, v):
-        if v and not re.match(r'^\d+$', v):
-            raise ValueError('Mobile Number must contain only digits')
+        if v and not re.match(r'^\+?[\d\-\s]+$', v):
+            raise ValueError('Mobile Number must contain only digits, +, -, and spaces')
         return v
 
     @validator('status')

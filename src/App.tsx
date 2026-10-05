@@ -246,7 +246,7 @@ function Shell() {
               }
             }}
             className={cn('flex w-full items-center gap-2 rounded-md px-3 py-2 text-[12.5px] font-semibold transition-colors',
-              (trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? 'bg-sidebar-accent text-sage-light' : 'bg-primary text-white hover:bg-primary-hover')}>
+              (trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'bg-primary text-white hover:bg-primary-hover')}>
             {(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? <LogOut className="size-4" aria-hidden="true" /> : <LogIn className="size-4" aria-hidden="true" />}
             {(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? 'Check-Out' : 'Check-In'}
             {(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) && trackingStatus.check_in_time &&
@@ -280,7 +280,7 @@ function Shell() {
             </button>
             <div className="relative">
               <button aria-label="User menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(o => !o)} className="flex items-center gap-2 rounded-md border border-input bg-card py-1.5 pl-1.5 pr-1.5 transition-colors hover:bg-secondary md:gap-2.5 md:pr-2.5">
-                <div className="flex size-6 shrink-0 items-center justify-center rounded bg-ink font-mono2 text-[10px] font-semibold text-sage-light">{initials(user.name)}</div>
+                <div className="flex size-6 shrink-0 items-center justify-center rounded bg-ink font-mono2 text-[10px] font-semibold text-primary-foreground">{initials(user.name)}</div>
                 <div className="hidden text-left leading-tight md:block">
                   <div className="text-[12px] font-semibold">{user.name}</div>
                   <div className="kicker text-muted-foreground truncate max-w-[120px]">{user.role} · {user.designation}</div>

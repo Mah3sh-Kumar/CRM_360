@@ -30,7 +30,7 @@ export default function OpportunityDetail({ id, onBack }: { id: string; onBack: 
   const closed = opp.stage === 'Won' || opp.stage === 'Lost';
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 min-w-0">
       <BackBar onBack={onBack} kicker={`Opportunities · ${opp.code}`} title={opp.name}
         sub={`${opp.account} · owner ${opp.owner} · expected close ${opp.closeDate}`}
         badges={[<StatusBadge key="st" label={opp.stage} tone={opp.stage === 'Won' ? 'ink' : opp.stage === 'Lost' ? 'red' : 'blue'} />,

@@ -12,7 +12,7 @@ export function PageHeader({ kicker, title, sub, action }: { kicker: string; tit
         <h1 className="font-display text-[26px] leading-none font-semibold tracking-tight truncate">{title}</h1>
         {sub && <p className="text-[13px] text-muted-foreground mt-2 max-w-xl">{sub}</p>}
       </div>
-      <div className="flex w-full shrink-0 items-center gap-2 overflow-x-auto sm:w-auto">{action}</div>
+      <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto">{action}</div>
     </div>
   );
 }
@@ -24,7 +24,7 @@ const toneMap: Record<string, string> = {
   red: 'bg-destructive-bg text-destructive border-destructive-border',
   blue: 'bg-info-bg text-info border-info-border',
   gray: 'bg-neutral-bg text-neutral border-neutral-border',
-  ink: 'bg-ink text-sage-light border-ink',
+  ink: 'bg-ink text-primary-foreground border-ink',
 };
 export type Tone = keyof typeof toneMap;
 

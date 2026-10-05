@@ -34,7 +34,7 @@ export default function Leads({ onOpen }: { onOpen: (id: string) => void }) {
           return (
             <button key={s} onClick={() => setFilter(filter === s ? 'All' : s)}
               className={`min-w-[120px] flex-1 px-3 py-3 text-left transition-colors shrink-0 ${filter === s ? 'bg-ink text-white' : 'bg-card hover:bg-muted-bg'}`}>
-              <div className={`kicker ${filter === s ? 'text-sage-light' : 'text-muted-foreground'}`}>{s}</div>
+              <div className={`kicker ${filter === s ? 'text-primary-foreground' : 'text-muted-foreground'}`}>{s}</div>
               <div className="font-display mt-1 text-[20px] font-semibold leading-none">{n}</div>
             </button>
           );
