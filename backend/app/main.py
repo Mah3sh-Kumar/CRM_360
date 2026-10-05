@@ -1,0 +1,41 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.routers import auth, companies, employees, customers, leads, accounts, contacts, opportunities, activities, tasks, meetings, tracking, visits, reports, audit
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+)
+
+from app.core.audit import AuditMiddleware
+
+# Set all CORS enabled origins
+app.add_middleware(AuditMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # In production, restrict to frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
+app.include_router(companies.router, prefix=f"{settings.API_V1_STR}/companies", tags=["companies"])
+app.include_router(employees.router, prefix=f"{settings.API_V1_STR}/employees", tags=["employees"])
+app.include_router(customers.router, prefix=f"{settings.API_V1_STR}/customers", tags=["customers"])
+app.include_router(leads.router, prefix=f"{settings.API_V1_STR}/leads", tags=["leads"])
+app.include_router(accounts.router, prefix=f"{settings.API_V1_STR}/accounts", tags=["accounts"])
+app.include_router(contacts.router, prefix=f"{settings.API_V1_STR}/contacts", tags=["contacts"])
+app.include_router(opportunities.router, prefix=f"{settings.API_V1_STR}/opportunities", tags=["opportunities"])
+app.include_router(activities.router, prefix=f"{settings.API_V1_STR}/activities", tags=["activities"])
+app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}/tasks", tags=["tasks"])
+app.include_router(meetings.router, prefix=f"{settings.API_V1_STR}/meetings", tags=["meetings"])
+app.include_router(tracking.router, prefix=f"{settings.API_V1_STR}/tracking", tags=["tracking"])
+app.include_router(visits.router, prefix=f"{settings.API_V1_STR}/visits", tags=["visits"])
+app.include_router(reports.router, prefix=f"{settings.API_V1_STR}", tags=["reports"])
+app.include_router(audit.router, prefix=f"{settings.API_V1_STR}/audit", tags=["audit"])

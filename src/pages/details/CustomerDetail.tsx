@@ -1,6 +1,6 @@
 // src/pages/details/CustomerDetail.tsx — Customer 360 + Record Visit (GPS-gated)
 import { useState } from 'react';
-import { DataTable, StatusBadge, Mono } from '@/components/shared';
+import { DataTable, StatusBadge, Mono, LoadingState, ErrorState } from '@/components/shared';
 import type { Tone } from '@/components/shared';
 import { BackBar, DetailTabs, Field, EmptyRow } from '@/pages/details/shared';
 import { useCRM } from '@/store/crm';
@@ -17,7 +17,9 @@ export default function CustomerDetail({ id, onBack }: { id: string; onBack: () 
   const [visitMsg, setVisitMsg] = useState<{ ok: boolean; message: string } | null>(null);
   const [purpose, setPurpose] = useState('Requirement Discussion');
 
-  if (!customer) return <div className="space-y-4"><EmptyRow text="Customer not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-[#007f24]">← Back to Customers</button></div>;
+  if (crm.loading.customers && !customer) return <LoadingState message="Loading customer details..." />;
+  if (crm.error.customers) return <ErrorState title="Failed to load customer" message={crm.error.customers} onRetry={crm.fetchCustomers} />;
+  if (!customer) return <div className="space-y-4"><EmptyRow text="Customer not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-primary">← Back to Customers</button></div>;
 
   const accts = crm.accounts.filter(a => a.name === customer.name);
   const contactList = crm.contacts.filter(c => c.account === customer.name);
@@ -39,26 +41,26 @@ export default function CustomerDetail({ id, onBack }: { id: string; onBack: () 
       <BackBar onBack={onBack} kicker={`Customers · ${customer.code}`} title={customer.name}
         sub={`${customer.industry} · ${customer.city} · customer since ${customer.since}`}
         badges={[<StatusBadge key="s" label={customer.status} tone={cusTone(customer.status)} />]}
-        actions={
-          <div className="flex items-end gap-2">
-            <select value={purpose} onChange={e => setPurpose(e.target.value)} className="h-8 rounded-md border border-input bg-card px-2 text-[12px]">
+        actions={crm.can('CREATE', 'VISIT') && (
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <select value={purpose} onChange={e => setPurpose(e.target.value)} className="h-8 w-full rounded-md border border-input bg-card px-2 text-[12px] sm:w-auto">
               <option>Requirement Discussion</option><option>Demo</option><option>Follow-Up</option><option>Contract Discussion</option><option>Complaint Resolution</option>
             </select>
             <button onClick={() => setVisitMsg(crm.recordVisit({ customer: customer.name, contact: contactList[0]?.name ?? '', purpose }))}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#007f24] px-3 text-[12.5px] font-semibold text-white hover:bg-[#0a6b20]">
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-[12.5px] font-semibold text-white hover:bg-primary-hover">
               <MapPin className="size-3.5" /> Record Visit
             </button>
           </div>
-        } />
+        )} />
 
       {visitMsg && (
-        <div className={`rounded-lg border px-4 py-2.5 text-[12.5px] ${visitMsg.ok ? 'border-[#bcdcc6] bg-[#e3f0e7] text-[#0f6b2e]' : 'border-[#eadfbe] bg-[#faf3e0] text-[#8a6d1a]'}`}>
+        <div className={`rounded-lg border px-4 py-2.5 text-[12.5px] ${visitMsg.ok ? 'border-success-border bg-success-bg text-success' : 'border-warning-border bg-warning-bg text-warning'}`}>
           {visitMsg.ok ? '✓' : '⚠'} {visitMsg.message}
           {crm.checkIn.fix && <span className="ml-2 font-mono2 text-[10.5px]">GPS {crm.checkIn.fix.lat}, {crm.checkIn.fix.lng}</span>}
         </div>
       )}
       {!crm.checkIn.checkedIn && !visitMsg && (
-        <div className="rounded-lg border border-[#eadfbe] bg-[#faf3e0] px-4 py-2.5 text-[12.5px] text-[#8a6d1a]">
+        <div className="rounded-lg border border-warning-border bg-warning-bg px-4 py-2.5 text-[12.5px] text-warning">
           ⚠ Check-In required — you must check in (sidebar) before recording a customer visit.
         </div>
       )}
@@ -68,7 +70,7 @@ export default function CustomerDetail({ id, onBack }: { id: string; onBack: () 
         {tab === 'overview' && (
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-lg border border-border bg-card p-4 md:col-span-2">
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                 <Field label="Phone"><Mono>{customer.phone}</Mono></Field>
                 <Field label="Email"><Mono>{customer.email || '—'}</Mono></Field>
                 <Field label="Owner">{customer.owner}</Field>

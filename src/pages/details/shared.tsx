@@ -13,16 +13,16 @@ export function BackBar({ onBack, kicker, title, sub, badges, actions }: {
   return (
     <div className="pb-5 border-b border-border">
       <button onClick={onBack} className="mb-3 inline-flex items-center gap-1.5 font-mono2 text-[11px] text-muted-foreground transition-colors hover:text-foreground">
-        <ArrowLeft className="size-3.5" /> Back
+        <ArrowLeft aria-hidden="true" className="size-3.5" /> Back
       </button>
-      <div className="flex items-end justify-between gap-4">
-        <div>
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+        <div className="w-full min-w-0">
           <div className="kicker mb-1.5 text-muted-foreground">{kicker}</div>
-          <h1 className="font-display text-[24px] leading-none font-semibold tracking-tight">{title}</h1>
+          <h1 className="font-display text-[24px] leading-none font-semibold tracking-tight truncate">{title}</h1>
           {sub && <p className="mt-1.5 text-[12.5px] text-muted-foreground">{sub}</p>}
           {badges && <div className="mt-2.5 flex flex-wrap items-center gap-1.5">{badges}</div>}
         </div>
-        <div className="flex items-center gap-2">{actions}</div>
+        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto">{actions}</div>
       </div>
     </div>
   );
@@ -31,12 +31,26 @@ export function BackBar({ onBack, kicker, title, sub, badges, actions }: {
 export function DetailTabs<T extends string>({ tabs, active, onChange }: {
   tabs: { id: T; label: string; count?: number }[]; active: T; onChange: (t: T) => void;
 }) {
+  const onKeyDown = (e: React.KeyboardEvent, idx: number) => {
+    let nextIdx = idx;
+    if (e.key === 'ArrowRight') nextIdx = (idx + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') nextIdx = (idx - 1 + tabs.length) % tabs.length;
+    
+    if (nextIdx !== idx) {
+      e.preventDefault();
+      const el = document.getElementById(`tab-${String(tabs[nextIdx].id)}`);
+      el?.focus();
+      onChange(tabs[nextIdx].id);
+    }
+  };
+
   return (
-    <div className="flex gap-1 border-b border-border">
-      {tabs.map(t => (
-        <button key={t.id} onClick={() => onChange(t.id)}
-          className={cn('-mb-px border-b-2 px-3 py-2 text-[12.5px] font-medium transition-colors',
-            active === t.id ? 'border-[#007f24] text-[#007f24]' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+    <div role="tablist" aria-label="Details" className="flex gap-1 overflow-x-auto border-b border-border hide-scrollbar">
+      {tabs.map((t, i) => (
+        <button key={t.id} id={`tab-${String(t.id)}`} role="tab" aria-selected={active === t.id} tabIndex={active === t.id ? 0 : -1} onClick={() => onChange(t.id)}
+          onKeyDown={e => onKeyDown(e, i)}
+          className={cn('-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-[12.5px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+            active === t.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
           {t.label}
           {typeof t.count === 'number' && <span className="ml-1.5 font-mono2 text-[10px] text-muted-foreground">{t.count}</span>}
         </button>

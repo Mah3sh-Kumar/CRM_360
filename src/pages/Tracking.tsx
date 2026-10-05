@@ -1,70 +1,114 @@
-import { PageHeader, StatusBadge, Mono } from '@/components/shared';
-import { trackPoints } from '@/data/mock';
+import { useEffect, useState } from 'react';
+import { useTracking } from '@/store/tracking';
+import { useCRM } from '@/store/crm';
 import { MapPin, Navigation } from 'lucide-react';
+import { EmptyState } from '@/components/shared';
 
 export default function Tracking() {
-  return (
-    <div className="space-y-5">
-      <PageHeader kicker="Employee Tracking · Live" title="Live Employee Tracking"
-        sub="GPS positions streamed via the browser Geolocation API after check-in. Tracking stops automatically on check-out." />
+  const { trackingStatus, checkIn, checkOut } = useTracking();
+  const [locations, setLocations] = useState<any[]>([]);
+  const { user } = useCRM();
+  const role = user?.role;
+  const token = localStorage.getItem('crm_token');
+  const [loading, setLoading] = useState(false);
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Map panel (code-drawn, Google Maps API slots in here) */}
-        <div className="relative overflow-hidden rounded-lg border border-border lg:col-span-2" style={{ background: '#eef2ea' }}>
-          <svg viewBox="0 0 100 80" className="block h-[440px] w-full" preserveAspectRatio="none">
-            {/* street grid */}
-            {Array.from({ length: 13 }, (_, i) => <line key={'v' + i} x1={i * 8.33} y1="0" x2={i * 8.33} y2="80" stroke="#dde5d8" strokeWidth="0.25" />)}
-            {Array.from({ length: 11 }, (_, i) => <line key={'h' + i} x1="0" y1={i * 8} x2="100" y2={i * 8} stroke="#dde5d8" strokeWidth="0.25" />)}
-            {/* arterial roads */}
-            <path d="M0,30 C25,26 55,38 100,30" stroke="#c9d6c2" strokeWidth="1.6" fill="none" />
-            <path d="M40,0 C44,25 36,55 46,80" stroke="#c9d6c2" strokeWidth="1.6" fill="none" />
-            <path d="M0,62 C30,58 70,70 100,60" stroke="#c9d6c2" strokeWidth="1.2" fill="none" />
-            {/* route trail */}
-            <path d="M62,34 C58,42 50,50 48,72" stroke="#007f24" strokeWidth="0.7" strokeDasharray="1.6 1.2" fill="none" opacity="0.7" />
-          </svg>
-          {trackPoints.filter(t => t.status === 'Checked-In').map(t => (
-            <div key={t.employee} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${t.x}%`, top: `${t.y}%` }}>
-              <span className="absolute -inset-3 animate-ping rounded-full bg-[#007f24]/15" />
-              <span className="relative flex size-5 items-center justify-center rounded-full border-2 border-white bg-[#007f24] shadow">
-                <Navigation className="size-2.5 text-white" />
-              </span>
-              <div className="absolute left-1/2 top-6 -translate-x-1/2 whitespace-nowrap rounded border border-border bg-white px-2 py-1 font-mono2 text-[9.5px] font-medium shadow-sm">
-                {t.employee.split(' ')[0]} · {t.lastArea}
-              </div>
+  useEffect(() => {
+    const fetchData = () => {
+      if (token) {
+        fetch('http://localhost:8000/api/tracking/locations', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(r => r.json())
+        .then(d => { if (Array.isArray(d)) setLocations(d); });
+      }
+    };
+    fetchData();
+    const interval = setInterval(fetchData, 120000); // 2 minutes
+    return () => clearInterval(interval);
+  }, [token]);
+
+  const handleAction = async (action: 'in' | 'out') => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        if (action === 'in') {
+          await checkIn(position.coords.latitude, position.coords.longitude, "GPS Location");
+        } else {
+          await checkOut(position.coords.latitude, position.coords.longitude, "GPS Location");
+        }
+      } catch (err: any) {
+        alert(err.message || 'Action failed');
+      } finally {
+        setLoading(false);
+      }
+    }, (error) => {
+      let msg = "Failed to get location.";
+      if (error.code === 1) msg = "Location permission denied.";
+      else if (error.code === 2) msg = "Position unavailable.";
+      else if (error.code === 3) msg = "Location request timed out.";
+      alert(msg);
+      setLoading(false);
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Live Tracking</h1>
+          <p className="text-[13px] text-muted-foreground mt-1">Monitor employee field locations.</p>
+        </div>
+        {role === 'Employee' && (
+          <div className="flex gap-2">
+            {!trackingStatus?.is_checked_in ? (
+              <button disabled={loading} onClick={() => handleAction('in')} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-hover">
+                <Navigation className="size-4" /> Check-In
+              </button>
+            ) : !trackingStatus?.is_checked_out ? (
+              <button disabled={loading} onClick={() => handleAction('out')} className="flex items-center gap-2 rounded-md bg-destructive px-4 py-2 text-[13px] font-semibold text-destructive-foreground hover:bg-destructive/90">
+                Check-Out
+              </button>
+            ) : (
+              <div className="text-[13px] font-medium text-muted-foreground">Checked out for today</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-[1fr_300px]">
+        {/* Map placeholder */}
+        <div className="h-[400px] md:h-[600px] rounded-lg border border-border bg-card overflow-hidden relative">
+          <div className="absolute inset-0 bg-neutral-border flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <MapPin className="size-8 mx-auto mb-2 opacity-50" />
+              <p className="text-[13px] font-medium">Map View</p>
+              <p className="text-[11px]">Integration ready for Google Maps API.</p>
             </div>
+          </div>
+          {/* Simulated markers */}
+          {locations.slice(0, 10).map((loc, i) => (
+            <div key={loc.id} className="absolute size-4 bg-primary rounded-full border-2 border-white shadow shadow-black/20"
+                 style={{ top: `${50 + (i * 2)}%`, left: `${50 + (i * 3)}%` }}></div>
           ))}
-          <div className="absolute left-3 top-3 rounded-md border border-border bg-white/90 px-2.5 py-1.5 backdrop-blur">
-            <div className="kicker text-muted-foreground">Live Feed</div>
-            <div className="font-mono2 text-[10.5px] font-medium text-[#007f24]">3 EMPLOYEES TRACKED · 15s REFRESH</div>
-          </div>
-          <div className="absolute bottom-3 right-3 rounded-md border border-border bg-white/90 px-2.5 py-1.5 font-mono2 text-[9.5px] text-muted-foreground backdrop-blur">
-            Google Maps API renders here in production
-          </div>
         </div>
 
-        {/* Side list */}
-        <div className="space-y-2.5">
-          {trackPoints.map(t => (
-            <div key={t.employee} className="rounded-lg border border-border bg-card p-3.5">
-              <div className="flex items-center justify-between">
-                <div className="text-[13.5px] font-semibold">{t.employee}</div>
-                <StatusBadge label={t.status} tone={t.status === 'Checked-In' ? 'green' : t.status === 'On Leave' ? 'amber' : 'gray'} />
+        {/* List */}
+        <div className="rounded-lg border border-border bg-card flex flex-col">
+          <div className="border-b border-border p-4 font-semibold text-[14px]">Recent Locations</div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {locations.length === 0 && <div className="py-4"><EmptyState title="No Locations" description="No locations found today." /></div>}
+            {locations.map(loc => (
+              <div key={loc.id} className="border-b border-border pb-3 last:border-0 last:pb-0">
+                <div className="text-[13px] font-medium">Employee #{loc.employee_id}</div>
+                <div className="text-[11px] font-mono2 text-muted-foreground">{new Date(loc.timestamp).toLocaleTimeString()}</div>
+                <div className="text-[12px] text-muted-foreground mt-1 line-clamp-2">{loc.address}</div>
               </div>
-              <div className="mt-2 grid grid-cols-3 gap-2 border-t border-border/60 pt-2.5">
-                {[['Since', t.since], ['Visits', String(t.visitsToday)], ['Km Today', t.kmToday ? t.kmToday.toFixed(1) : '—']].map(([k, v]) => (
-                  <div key={k}>
-                    <div className="kicker text-muted-foreground">{k}</div>
-                    <Mono className="mt-0.5 font-semibold">{v}</Mono>
-                  </div>
-                ))}
-              </div>
-              {t.status === 'Checked-In' && (
-                <div className="mt-2.5 flex items-center gap-1.5 font-mono2 text-[10px] text-muted-foreground">
-                  <MapPin className="size-3 text-[#007f24]" /> Last fix: {t.lastArea} · 15s ago
-                </div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

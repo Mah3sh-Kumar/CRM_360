@@ -14,7 +14,15 @@ export default function GlobalSearch({ open, onClose, onNavigate }: {
   const [q, setQ] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (open) { setQ(''); setTimeout(() => inputRef.current?.focus(), 0); } }, [open]);
+  useEffect(() => { 
+    if (open) { 
+      setQ(''); 
+      setTimeout(() => inputRef.current?.focus(), 0); 
+    } 
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    if (open) document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
   if (!open) return null;
 
   const ql = q.trim().toLowerCase();
@@ -34,11 +42,12 @@ export default function GlobalSearch({ open, onClose, onNavigate }: {
   const visible = groups.filter(g => g.items.length > 0);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0c231e]/40 backdrop-blur-[2px]" onClick={onClose}>
-      <div className="mx-auto mt-[14vh] w-[min(580px,92vw)] overflow-hidden rounded-xl border border-border bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-sidebar/40 backdrop-blur-[2px]" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label="Global Search" className="mx-auto mt-[14vh] w-[min(580px,92vw)] overflow-hidden rounded-xl border border-border bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-2.5 border-b border-border px-4">
-          <Search className="size-4 text-muted-foreground" />
+          <Search aria-hidden="true" className="size-4 text-muted-foreground" />
           <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)}
+            aria-label="Search leads, accounts, customers, opportunities"
             placeholder="Search leads, accounts, customers, opportunities…"
             className="h-12 w-full bg-transparent text-[13.5px] outline-none" />
           <kbd className="kicker rounded border border-border px-1.5 py-0.5 text-muted-foreground">ESC</kbd>
@@ -51,8 +60,8 @@ export default function GlobalSearch({ open, onClose, onNavigate }: {
               <div className="kicker px-2 py-1.5 text-muted-foreground">{g.label}</div>
               {g.items.map((it, i) => (
                 <button key={i} onClick={() => { onNavigate(g.page, it.id); onClose(); }}
-                  className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-[#f4f7f2]">
-                  <g.icon className="size-3.5 shrink-0 text-muted-foreground" />
+                  className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-muted-bg">
+                  <g.icon aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="truncate text-[12.5px] font-medium">{it.label}</span>
                   <span className="ml-auto truncate pl-3 font-mono2 text-[10.5px] text-muted-foreground">{it.sub}</span>
                 </button>

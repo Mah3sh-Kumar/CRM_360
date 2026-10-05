@@ -6,11 +6,23 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+CRM_SRS_2.txt
+
 
 node_modules
 dist
 dist-ssr
 *.local
+
+# Backend
+backend/.env
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.pytest_cache/
+backend/**/.pytest_cache/
+*.db
+*.log
 
 # Editor directories and files
 .vscode/*

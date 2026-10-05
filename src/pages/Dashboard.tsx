@@ -4,6 +4,9 @@ import { ArrowUpRight, ArrowDownRight, ArrowRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, FunnelChart, Funnel, LabelList, Cell, PieChart, Pie } from 'recharts';
 
 const GREEN = '#007f24', SAGE = '#85c093', INK = '#09352e';
+const DESTRUCTIVE = '#b03a26', MUTED_FG = '#71807e', TOOLTIP_BG = '#f0f4ec', TOOLTIP_BORDER = '#dfe4da';
+const CHART_FG = '#4d5a52';
+const PIPELINE_COLORS = [INK, GREEN, SAGE, '#c8dec9', '#e3efe4'];
 
 const kpis = [
   { label: 'Open Leads', value: '5', delta: '+2 this week', up: true },
@@ -38,7 +41,7 @@ export default function Dashboard({ go }: { go: (p: string) => void }) {
           <div key={k.label} className="bg-card p-4">
             <div className="kicker text-muted-foreground">{k.label}</div>
             <div className="font-display mt-2 text-[24px] font-semibold leading-none tracking-tight">{k.value}</div>
-            <div className={`mt-2 flex items-center gap-1 font-mono2 text-[10.5px] ${k.up ? 'text-[#0f6b2e]' : 'text-[#b03a26]'}`}>
+            <div className={`mt-2 flex items-center gap-1 font-mono2 text-[10.5px] ${k.up ? 'text-success' : 'text-destructive'}`}>
               {k.up ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}{k.delta}
             </div>
           </div>
@@ -50,17 +53,17 @@ export default function Dashboard({ go }: { go: (p: string) => void }) {
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="mb-1 flex items-center justify-between">
             <div className="kicker text-muted-foreground">Lead Status</div>
-            <button onClick={() => go('leads')} className="flex items-center gap-1 font-mono2 text-[10.5px] font-medium text-[#007f24] hover:underline">VIEW LEADS <ArrowRight className="size-3" /></button>
+            <button onClick={() => go('leads')} className="flex items-center gap-1 font-mono2 text-[10.5px] font-medium text-primary hover:underline">VIEW LEADS <ArrowRight className="size-3" /></button>
           </div>
           <div className="font-display text-[15px] font-semibold">8 leads across lifecycle</div>
           <div className="mt-3 h-[190px]">
             <ResponsiveContainer>
               <BarChart data={leadStatus} barSize={18}>
-                <XAxis dataKey="s" tick={{ fontSize: 9.5, fill: '#71807e' }} axisLine={false} tickLine={false} interval={0} angle={-28} textAnchor="end" height={48} />
+                <XAxis dataKey="s" tick={{ fontSize: 9.5, fill: MUTED_FG }} axisLine={false} tickLine={false} interval={0} angle={-28} textAnchor="end" height={48} />
                 <YAxis hide domain={[0, 3]} />
-                <Tooltip cursor={{ fill: '#f0f4ec' }} contentStyle={{ fontSize: 11, border: '1px solid #dfe4da', borderRadius: 6 }} />
+                <Tooltip cursor={{ fill: TOOLTIP_BG }} contentStyle={{ fontSize: 11, border: `1px solid ${TOOLTIP_BORDER}`, borderRadius: 6 }} />
                 <Bar dataKey="n" radius={[3, 3, 0, 0]}>
-                  {leadStatus.map((d, i) => <Cell key={i} fill={d.s === 'Lost' ? '#b03a26' : d.s === 'Won' ? INK : d.s === 'New' ? SAGE : GREEN} />)}
+                  {leadStatus.map((d, i) => <Cell key={i} fill={d.s === 'Lost' ? DESTRUCTIVE : d.s === 'Won' ? INK : d.s === 'New' ? SAGE : GREEN} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -74,10 +77,10 @@ export default function Dashboard({ go }: { go: (p: string) => void }) {
           <div className="mt-3 h-[190px]">
             <ResponsiveContainer>
               <FunnelChart>
-                <Tooltip contentStyle={{ fontSize: 11, border: '1px solid #dfe4da', borderRadius: 6 }} formatter={(v: number) => fmtINR(v)} />
+                <Tooltip contentStyle={{ fontSize: 11, border: `1px solid ${TOOLTIP_BORDER}`, borderRadius: 6 }} formatter={(v: number) => fmtINR(v)} />
                 <Funnel dataKey="value" data={pipeline} isAnimationActive>
-                  <LabelList position="right" dataKey="name" stroke="none" style={{ fontSize: 10.5, fill: '#4d5a52', fontFamily: 'IBM Plex Mono' }} />
-                  {pipeline.map((_, i) => <Cell key={i} fill={[INK, GREEN, SAGE, '#c8dec9', '#e3efe4'][i % 5]} />)}
+                  <LabelList position="right" dataKey="name" stroke="none" style={{ fontSize: 10.5, fill: CHART_FG, fontFamily: 'IBM Plex Mono' }} />
+                  {pipeline.map((_, i) => <Cell key={i} fill={PIPELINE_COLORS[i % 5]} />)}
                 </Funnel>
               </FunnelChart>
             </ResponsiveContainer>
@@ -93,7 +96,7 @@ export default function Dashboard({ go }: { go: (p: string) => void }) {
               <ResponsiveContainer>
                 <PieChart>
                   <Pie data={activityMix} dataKey="value" innerRadius={48} outerRadius={70} paddingAngle={3} strokeWidth={0} />
-                  <Tooltip contentStyle={{ fontSize: 11, border: '1px solid #dfe4da', borderRadius: 6 }} />
+                  <Tooltip contentStyle={{ fontSize: 11, border: `1px solid ${TOOLTIP_BORDER}`, borderRadius: 6 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -114,7 +117,7 @@ export default function Dashboard({ go }: { go: (p: string) => void }) {
         <div className="rounded-lg border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="kicker text-muted-foreground">Hot Opportunities</div>
-            <button onClick={() => go('opportunities')} className="flex items-center gap-1 font-mono2 text-[10.5px] font-medium text-[#007f24] hover:underline">PIPELINE <ArrowRight className="size-3" /></button>
+            <button onClick={() => go('opportunities')} className="flex items-center gap-1 font-mono2 text-[10.5px] font-medium text-primary hover:underline">PIPELINE <ArrowRight className="size-3" /></button>
           </div>
           {opportunities.filter(o => !['Won', 'Lost'].includes(o.stage)).slice(0, 4).map(o => (
             <div key={o.id} className="flex items-center gap-3 border-b border-border/50 px-4 py-2.5 last:border-0">
@@ -125,7 +128,7 @@ export default function Dashboard({ go }: { go: (p: string) => void }) {
               </div>
               <div className="w-24">
                 <div className="mb-1 flex justify-between font-mono2 text-[9.5px] text-muted-foreground"><span>{o.stage}</span><span>{o.probability}%</span></div>
-                <div className="h-1 rounded-full bg-secondary"><div className="h-1 rounded-full bg-[#007f24]" style={{ width: `${o.probability}%` }} /></div>
+                <div className="h-1 rounded-full bg-secondary"><div className="h-1 rounded-full bg-primary" style={{ width: `${o.probability}%` }} /></div>
               </div>
               <div className="w-16 text-right font-display text-[13px] font-semibold">{fmtINR(o.expectedRevenue)}</div>
             </div>
@@ -135,7 +138,7 @@ export default function Dashboard({ go }: { go: (p: string) => void }) {
         <div className="rounded-lg border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="kicker text-muted-foreground">Today · Tasks & Meetings</div>
-            <button onClick={() => go('tasks')} className="flex items-center gap-1 font-mono2 text-[10.5px] font-medium text-[#007f24] hover:underline">MY TASKS <ArrowRight className="size-3" /></button>
+            <button onClick={() => go('tasks')} className="flex items-center gap-1 font-mono2 text-[10.5px] font-medium text-primary hover:underline">MY TASKS <ArrowRight className="size-3" /></button>
           </div>
           {tasks.filter(t => t.status !== 'Completed').slice(0, 3).map(t => (
             <div key={t.id} className="flex items-center gap-3 border-b border-border/50 px-4 py-2.5">
