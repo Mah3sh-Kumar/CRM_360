@@ -16,8 +16,18 @@ from app.models.meeting import Meeting
 router = APIRouter()
 
 @router.get("/summary")
-def get_dashboard_summary(db: Session = Depends(get_db), current_user: Employee = Depends(get_current_user)):
+def get_dashboard_summary(start_date: str = None, end_date: str = None, db: Session = Depends(get_db), current_user: Employee = Depends(get_current_user)):
     team_ids = None
+    
+    dt_start = None
+    dt_end = None
+    if start_date and end_date:
+        try:
+            dt_start = datetime.strptime(start_date, "%Y-%m-%d")
+            dt_end = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        except ValueError:
+            pass
+
     if current_user.role == "Manager":
         team_ids = get_team_member_ids(db, current_user.id)
     elif current_user.role == "Employee":
@@ -37,6 +47,12 @@ def get_dashboard_summary(db: Session = Depends(get_db), current_user: Employee 
                 query = query.filter(model.employee_id.in_(team_ids))
             elif hasattr(model, 'organizer_id'):
                 query = query.filter(model.organizer_id.in_(team_ids))
+        return query
+
+    def apply_date_filter(query, model, date_column_name):
+        if dt_start and dt_end:
+            date_col = getattr(model, date_column_name)
+            query = query.filter(date_col >= dt_start, date_col <= dt_end)
         return query
 
     # Open Leads
@@ -62,11 +78,15 @@ def get_dashboard_summary(db: Session = Depends(get_db), current_user: Employee 
     visits_today = apply_filters(db.query(func.count(Visit.id)).filter(cast(Visit.visit_date, Date) == today), Visit).scalar() or 0
 
     # Lead Status
-    lead_status_res = apply_filters(db.query(Lead.status, func.count(Lead.id)), Lead).group_by(Lead.status).all()
+    lead_query = apply_filters(db.query(Lead.status, func.count(Lead.id)), Lead)
+    lead_query = apply_date_filter(lead_query, Lead, 'created_date')
+    lead_status_res = lead_query.group_by(Lead.status).all()
     lead_status = [{"s": row[0], "n": row[1]} for row in lead_status_res]
     
     # Pipeline funnel
-    pipeline_stages_res = apply_filters(db.query(Opportunity.stage, func.sum(Opportunity.expected_revenue)), Opportunity).group_by(Opportunity.stage).all()
+    pipeline_query = apply_filters(db.query(Opportunity.stage, func.sum(Opportunity.expected_revenue)), Opportunity)
+    pipeline_query = apply_date_filter(pipeline_query, Opportunity, 'created_date')
+    pipeline_stages_res = pipeline_query.group_by(Opportunity.stage).all()
     stages = ['Prospecting', 'Qualification', 'Proposal', 'Negotiation', 'Won']
     pipeline_data = [{"name": s, "value": 0} for s in stages]
     for row in pipeline_stages_res:
@@ -77,9 +97,17 @@ def get_dashboard_summary(db: Session = Depends(get_db), current_user: Employee 
                 p["value"] += float(value)
                 
     # Activity mix
-    tasks_completed = apply_filters(db.query(func.count(Task.id)).filter(Task.status == "Completed"), Task).scalar() or 0
-    visits_completed = apply_filters(db.query(func.count(Visit.id)).filter(Visit.status == "Completed"), Visit).scalar() or 0
-    meetings_conducted = apply_filters(db.query(func.count(Meeting.id)).filter(Meeting.status == "Completed"), Meeting).scalar() or 0
+    tasks_query = apply_filters(db.query(func.count(Task.id)).filter(Task.status == "Completed"), Task)
+    tasks_query = apply_date_filter(tasks_query, Task, 'due_date')
+    tasks_completed = tasks_query.scalar() or 0
+    
+    visits_query = apply_filters(db.query(func.count(Visit.id)).filter(Visit.status == "Completed"), Visit)
+    visits_query = apply_date_filter(visits_query, Visit, 'visit_date')
+    visits_completed = visits_query.scalar() or 0
+    
+    meetings_query = apply_filters(db.query(func.count(Meeting.id)).filter(Meeting.status == "Completed"), Meeting)
+    meetings_query = apply_date_filter(meetings_query, Meeting, 'start_datetime')
+    meetings_conducted = meetings_query.scalar() or 0
     
     activity_mix = [
         {"name": "Tasks Completed", "value": tasks_completed, "fill": "hsl(var(--chart-1))"},

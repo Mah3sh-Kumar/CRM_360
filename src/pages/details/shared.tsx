@@ -69,7 +69,7 @@ export function Field({ label, children }: { label: string; children?: ReactNode
 }
 
 export function EmptyRow({ text }: { text: string }) {
-  return <div className="rounded-lg border border-dashed border-border p-6 text-center font-mono2 text-[10.5px] text-muted-foreground">{text}</div>;
+  return <div className="rounded-lg border border-dashed border-border p-4 text-center font-mono2 text-[10.5px] text-muted-foreground">{text}</div>;
 }
 
 export { StatusBadge };

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey, Enum, Text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey, Enum, Text, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -44,11 +44,18 @@ class CheckIn(Base):
     
     __table_args__ = (
         UniqueConstraint('employee_id', 'check_in_date', name='uq_checkin_employee_date'),
+        CheckConstraint('latitude >= -90 AND latitude <= 90', name='chk_checkin_lat'),
+        CheckConstraint('longitude >= -180 AND longitude <= 180', name='chk_checkin_lon'),
     )
 
 
 class CheckOut(Base):
     __tablename__ = "check_outs"
+    __table_args__ = (
+        CheckConstraint('working_hours >= 0', name='chk_checkout_hours'),
+        CheckConstraint('latitude >= -90 AND latitude <= 90', name='chk_checkout_lat'),
+        CheckConstraint('longitude >= -180 AND longitude <= 180', name='chk_checkout_lon'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     check_in_id = Column(Integer, ForeignKey("check_ins.id"), unique=True, nullable=False)
@@ -74,6 +81,10 @@ class CheckOut(Base):
 
 class EmployeeLocation(Base):
     __tablename__ = "employee_locations"
+    __table_args__ = (
+        CheckConstraint('latitude >= -90 AND latitude <= 90', name='chk_loc_lat'),
+        CheckConstraint('longitude >= -180 AND longitude <= 180', name='chk_loc_lon'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False, index=True)
@@ -92,6 +103,10 @@ class EmployeeLocation(Base):
 
 class Visit(Base):
     __tablename__ = "visits"
+    __table_args__ = (
+        CheckConstraint('latitude >= -90 AND latitude <= 90', name='chk_visit_lat'),
+        CheckConstraint('longitude >= -180 AND longitude <= 180', name='chk_visit_lon'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False, index=True)

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { DataTable, StatusBadge, Mono, LoadingState, ErrorState } from '@/components/shared';
 import { BackBar, DetailTabs, EmptyRow } from '@/pages/details/shared';
 import { useCRM } from '@/store/crm';
-import { activities, tasks, meetings, fmtINR } from '@/data/mock';
+import { fmtINR } from '@/lib/utils';
 
 type Tab = 'contacts' | 'opportunities' | 'activities' | 'tasks' | 'meetings' | 'visits';
 
@@ -18,9 +18,9 @@ export default function AccountDetail({ id, onBack }: { id: string; onBack: () =
 
   const contacts = crm.contacts.filter(c => c.account === account.name);
   const opps = crm.opportunities.filter(o => o.account === account.name);
-  const acts = activities.filter(a => a.relatedTo === account.name);
-  const tks = tasks.filter(t => t.related === account.name || opps.some(o => o.code === t.related));
-  const mts = meetings.filter(m => m.account === account.name);
+  const acts = crm.activities.filter(a => a.relatedTo === account.name);
+  const tks = crm.tasks.filter(t => t.related === account.name || opps.some(o => o.code === t.related));
+  const mts = crm.meetings.filter(m => m.account === account.name);
   const vs = crm.visits.filter(v => v.customer === account.name);
 
   const tabs: { id: Tab; label: string; count: number }[] = [
@@ -33,9 +33,8 @@ export default function AccountDetail({ id, onBack }: { id: string; onBack: () =
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <BackBar onBack={onBack} kicker="Accounts · 360° View" title={account.name}
-        sub={`${account.industry} · ${account.city} · owned by ${account.owner}`}
         badges={[<StatusBadge key="h" label={account.openOpps > 0 ? 'Engaged' : 'Quiet'} tone={account.openOpps > 0 ? 'green' : 'gray'} />]} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

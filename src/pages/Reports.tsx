@@ -1,6 +1,6 @@
 // src/pages/Reports.tsx
 import { useState, useEffect } from 'react';
-import { PageHeader, DataTable, ErrorState, LoadingState, EmptyState } from '@/components/shared';
+import { PageHeader, DataTable, ErrorState, LoadingState, EmptyState, ChartCard, ReportChart } from '@/components/shared';
 import { Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { reportsApi } from '@/services/api/reports';
@@ -66,7 +66,7 @@ const REPORTS: Record<Cat, { name: string; path: string }[]> = {
 export default function Reports() {
   const [cat, setCat] = useState<Cat>('Leads');
   const [active, setActive] = useState<{ name: string; path: string } | null>(null);
-  const [apiData, setApiData] = useState<{ head: string[]; rows: React.ReactNode[][] } | null>(null);
+  const [apiData, setApiData] = useState<{ head: string[]; rows: React.ReactNode[][]; rawData: any[] } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,12 +79,15 @@ export default function Reports() {
     setLoading(true);
     setError(null);
     
-    reportsApi.fetchReport(active.path)
+    // Remove leading slash to prevent double slash in API URL
+    const cleanPath = active.path.replace(/^\/+/, '');
+    reportsApi.fetchReport(cleanPath)
       .then(res => {
         if (res && res.columns) {
           setApiData({
             head: res.columns,
-            rows: res.data.map(row => res.columns.map(c => <span className="font-medium text-[13px]">{String(row[c] ?? '—')}</span>))
+            rows: res.data.map(row => res.columns.map(c => <span className="font-medium text-[13px]">{String(row[c] ?? '—')}</span>)),
+            rawData: res.data
           });
         }
       })
@@ -97,15 +100,42 @@ export default function Reports() {
       });
   }, [active]);
 
-  const handleDownload = (format: 'csv' | 'xlsx' | 'pdf') => {
+  const handleDownload = async (format: 'csv' | 'xlsx' | 'pdf') => {
     if (!active) return;
-    const url = reportsApi.getDownloadUrl(active.path, format);
-    window.open(url, '_blank');
+    try {
+      const cleanPath = active.path.replace(/^\/+/, '');
+      const url = reportsApi.getDownloadUrl(cleanPath, format);
+      const token = localStorage.getItem('crm_token');
+      const headers: HeadersInit = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('Download failed');
+      
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      const contentDisposition = res.headers.get('Content-Disposition');
+      let filename = `${active.name.replace(/\\s+/g, '_')}.${format}`;
+      if (contentDisposition && contentDisposition.includes('filename=')) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) filename = match[1];
+      }
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download error:', err);
+      setError('Failed to download report.');
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader kicker="Reports" title="Reports & Analytics" sub="View and export real-time insights." />
+    <div className="space-y-4">
+      <PageHeader kicker="Reports" title="Reports & Analytics" />
 
       <div className="flex flex-col md:flex-row items-start gap-6 md:gap-8">
         {/* Categories Sidebar */}
@@ -172,11 +202,21 @@ export default function Reports() {
               ) : error ? (
                 <ErrorState title="Report Error" message={error} />
               ) : apiData && apiData.rows.length > 0 ? (
-                <div className="rounded-lg border shadow-sm overflow-hidden bg-background">
-                  <DataTable
-                    head={apiData.head}
-                    rows={apiData.rows}
-                  />
+                <div className="space-y-4">
+                  {apiData.head?.length >= 2 && apiData.rawData.length > 0 && (
+                    <ChartCard 
+                      title={`${active.name} - Visualization`} 
+                      onExport={() => handleDownload('pdf')}
+                    >
+                      <ReportChart columns={apiData.head} data={apiData.rawData} />
+                    </ChartCard>
+                  )}
+                  <div className="rounded-lg border shadow-sm overflow-hidden bg-background">
+                    <DataTable
+                      head={apiData.head}
+                      rows={apiData.rows}
+                    />
+                  </div>
                 </div>
               ) : (
                 <EmptyState title="No Data" description="No data found for this report." />

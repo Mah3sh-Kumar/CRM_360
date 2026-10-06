@@ -1,8 +1,8 @@
 // src/pages/Opportunities.tsx — store-backed + click-through + Lost column
-import { NewButton, ImportExport, Mono, StatusBadge, ErrorState, Toolbar, EmptyState } from '@/components/shared';
+import { NewButton, ImportExport, Mono, StatusBadge, ErrorState, Toolbar, EmptyState, SkeletonCard } from '@/components/shared';
 import type { Tone } from '@/components/shared';
-import { fmtINR } from '@/data/mock';
-import type { OppStage } from '@/data/mock';
+import { fmtINR } from '@/lib/utils';
+import type { OppStage } from '@/types/models';
 import { useCRM } from '@/store/crm';
 import { ArrowRight, Plus } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -157,13 +157,13 @@ export default function Opportunities({ onOpen }: { onOpen: (id: string) => void
       {/* Main Content Area */}
       {error.opportunities ? (
         <ErrorState title="Failed to load opportunities" message={error.opportunities} onRetry={fetchOpportunities} />
-      ) : loading.opportunities && opportunities.length === 0 ? (
+      ) : loading.opportunities ? (
         <div className="flex gap-4 overflow-x-auto pb-4 items-start w-full min-h-[500px]">
           {stages.map(st => (
             <div key={st} className="flex-none w-[85vw] sm:w-[320px] xl:flex-1 xl:min-w-[260px] flex flex-col gap-3">
               <div className="h-[76px] rounded-xl border border-border bg-card/50 p-3" />
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-[180px] rounded-xl border border-border bg-card/50" />
+                <SkeletonCard key={i} className="h-[180px]" />
               ))}
             </div>
           ))}
@@ -205,8 +205,8 @@ export default function Opportunities({ onOpen }: { onOpen: (id: string) => void
                     </div>
 
                     <div className="space-y-3">
-                      {opps.map(o => (
-                        <button key={o.id} onClick={() => onOpen(o.id)} className="group block w-full rounded-xl border border-border bg-card p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer">
+                      {opps.map((o, i) => (
+                        <button key={o.id} onClick={() => onOpen(o.id)} style={{ animationDelay: `${i * 40}ms` }} className="group block w-full rounded-xl border border-border bg-card p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:transform-none fill-mode-both">
                           <div className="text-[14px] font-semibold leading-snug text-foreground mb-2 line-clamp-2">{o.name}</div>
                           
                           <div className="flex items-center justify-between mb-2">
@@ -241,7 +241,7 @@ export default function Opportunities({ onOpen }: { onOpen: (id: string) => void
                         </button>
                       ))}
                       {opps.length === 0 && (
-                        <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 p-6 text-center">
+                        <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 p-4 text-center">
                           <div className="text-[12.5px] font-medium text-muted-foreground mb-1">No deals</div>
                           <div className="text-[11px] text-muted-foreground/60">Empty pipeline stage</div>
                         </div>

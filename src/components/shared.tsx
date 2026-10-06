@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils';
 import { Search, Plus, Download, Upload, AlertCircle, FileQuestion } from 'lucide-react';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia, EmptyContent } from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
+export * from './ui/chart-card';
+export * from './ui/report-chart';
 
 export function PageHeader({ kicker, title, sub, action }: { kicker: string; title: string; sub?: string; action?: React.ReactNode }) {
   return (
@@ -128,7 +130,7 @@ export function ErrorState({ title = "Something went wrong", message = "An error
 
 export function EmptyState({ title = "No Results", description = "No data found.", icon = <FileQuestion />, action }: { title?: string; description?: string; icon?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <Empty>
+    <Empty className="animate-in fade-in zoom-in-95 duration-200">
       <EmptyHeader>
         <EmptyMedia variant="icon">{icon}</EmptyMedia>
         <EmptyTitle>{title}</EmptyTitle>
@@ -138,3 +140,27 @@ export function EmptyState({ title = "No Results", description = "No data found.
     </Empty>
   );
 }
+
+export { SkeletonKPI, SkeletonChart, SkeletonTable, SkeletonCard, SkeletonList } from './ui/skeletons';
+
+export function PremiumTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover text-popover-foreground border border-border shadow-md rounded-lg p-3 min-w-[120px] animate-in fade-in zoom-in-95 duration-200">
+        {label && <div className="text-muted-foreground font-mono2 text-[10.5px] mb-1">{label}</div>}
+        {payload.map((entry: any, index: number) => (
+          <div key={`item-${index}`} className="flex items-center justify-between gap-4 mt-1">
+            <div className="flex items-center gap-1.5">
+              <span className="size-2.5 rounded-[2px]" style={{ backgroundColor: entry.color || entry.payload.fill }} />
+              <span className="text-[12px] font-medium">{entry.name}</span>
+            </div>
+            <span className="font-mono2 text-[11.5px] font-semibold">{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
+export * from './ui/chart-card';

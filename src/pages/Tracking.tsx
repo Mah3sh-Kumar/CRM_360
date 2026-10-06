@@ -1,8 +1,64 @@
 import { useEffect, useState } from 'react';
+import { apiFetch } from '@/lib/api';
 import { useTracking } from '@/store/tracking';
 import { useCRM } from '@/store/crm';
-import { MapPin, Navigation } from 'lucide-react';
+import { Navigation, LocateFixed } from 'lucide-react';
 import { EmptyState } from '@/components/shared';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default marker icons in Leaflet with Vite/Webpack
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconRetinaUrl: iconRetina,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+function CurrentLocationMarker() {
+  const [position, setPosition] = useState<L.LatLng | null>(null);
+  const map = useMapEvents({
+    locationfound(e) {
+      setPosition(e.latlng);
+      map.flyTo(e.latlng, 14);
+    },
+    locationerror(e) {
+      alert("Could not find your location: " + e.message);
+    }
+  });
+
+  return (
+    <>
+      <div className="absolute top-3 right-3 z-[1000]">
+        <button 
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); map.locate(); }} 
+          className="bg-card p-2 rounded shadow-sm border border-border hover:bg-accent text-foreground flex items-center justify-center pointer-events-auto"
+          title="Find my location"
+        >
+          <LocateFixed className="size-4" />
+        </button>
+      </div>
+      {position === null ? null : (
+        <Marker position={position} icon={L.divIcon({
+          className: 'bg-transparent border-none',
+          html: '<div style="width: 16px; height: 16px; background-color: #3b82f6; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        })}>
+          <Popup>You are here</Popup>
+        </Marker>
+      )}
+    </>
+  );
+}
 
 export default function Tracking() {
   const { trackingStatus, checkIn, checkOut } = useTracking();
@@ -15,10 +71,7 @@ export default function Tracking() {
   useEffect(() => {
     const fetchData = () => {
       if (token) {
-        fetch('http://localhost:8000/api/tracking/locations', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        .then(r => r.json())
+        apiFetch('/tracking/locations')
         .then(d => { if (Array.isArray(d)) setLocations(d); });
       }
     };
@@ -56,7 +109,7 @@ export default function Tracking() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Live Tracking</h1>
@@ -80,20 +133,34 @@ export default function Tracking() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-[1fr_300px]">
-        {/* Map placeholder */}
+        {/* Map */}
         <div className="h-[400px] md:h-[600px] rounded-lg border border-border bg-card overflow-hidden relative">
-          <div className="absolute inset-0 bg-neutral-border flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <MapPin className="size-8 mx-auto mb-2 opacity-50" />
-              <p className="text-[13px] font-medium">Map View</p>
-              <p className="text-[11px]">Integration ready for Google Maps API.</p>
-            </div>
-          </div>
-          {/* Simulated markers */}
-          {locations.slice(0, 10).map((loc, i) => (
-            <div key={loc.id} className="absolute size-4 bg-primary rounded-full border-2 border-white shadow shadow-black/20"
-                 style={{ top: `${50 + (i * 2)}%`, left: `${50 + (i * 3)}%` }}></div>
-          ))}
+          <MapContainer 
+            center={locations.length > 0 && locations[0].latitude ? [locations[0].latitude, locations[0].longitude] : [20.5937, 78.9629]} 
+            zoom={locations.length > 0 ? 13 : 5} 
+            scrollWheelZoom={true}
+            className="w-full h-full z-0"
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <CurrentLocationMarker />
+            {locations.map(loc => {
+              if (loc.latitude && loc.longitude) {
+                return (
+                  <Marker key={loc.id} position={[loc.latitude, loc.longitude]}>
+                    <Popup>
+                      <div className="text-sm font-medium">Employee #{loc.employee_id}</div>
+                      <div className="text-xs text-muted-foreground">{new Date(loc.timestamp).toLocaleTimeString()}</div>
+                      {loc.address && <div className="text-xs mt-1">{loc.address}</div>}
+                    </Popup>
+                  </Marker>
+                );
+              }
+              return null;
+            })}
+          </MapContainer>
         </div>
 
         {/* List */}

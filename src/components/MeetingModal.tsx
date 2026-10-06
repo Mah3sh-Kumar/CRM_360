@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCRM } from '@/store/crm';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -70,8 +70,9 @@ export default function MeetingModal({ open, onClose, meetingId }: { open: boole
         start_datetime: new Date(startDatetime).toISOString(),
         end_datetime: new Date(new Date(startDatetime).getTime() + 3600000).toISOString(),
         related_module: relatedModule,
-        related_record_id: Number(relatedRecordId) || 1, // mock fallback
+        related_record_id: Number(relatedRecordId) || null,
         organizer_id: Number(organizerId),
+        participant_ids: [Number(organizerId)],
         status
       };
       
@@ -99,6 +100,9 @@ export default function MeetingModal({ open, onClose, meetingId }: { open: boole
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{meetingId ? 'Edit Meeting' : 'Schedule Meeting'}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Fill out the form below to {meetingId ? 'edit the' : 'schedule a'} meeting.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="mt-2 space-y-4">

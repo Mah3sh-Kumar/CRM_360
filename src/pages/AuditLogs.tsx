@@ -10,9 +10,8 @@ export default function AuditLogs() {
   const rows = useMemo(() => audit.filter(a => filter === 'All' || a.module === filter), [audit, filter]);
 
   return (
-    <div className="space-y-5">
-      <PageHeader kicker="Administration · Access Matrix" title="Audit Logs"
-        sub="Immutable trail of every create, update, conversion, stage change and geo event — visible to Super Admin and Company Admin only." />
+    <div className="space-y-4">
+      <PageHeader kicker="Administration · Access Matrix" title="Audit Logs" />
       <Toolbar placeholder="Search audit entries…">
         {modules.map(m => <FilterChip key={m} label={m} active={filter === m} onClick={() => setFilter(m)} />)}
       </Toolbar>
@@ -24,7 +23,6 @@ export default function AuditLogs() {
           a.action,
           <Mono className="text-muted-foreground">{a.record}</Mono>,
         ])} />
-      <p className="font-mono2 text-[10.5px] text-muted-foreground">Entries are appended by store actions (login, conversion, stage changes, check-in/out, visits) — swap the store methods for FastAPI calls to persist.</p>
     </div>
   );
 }

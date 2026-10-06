@@ -4,7 +4,7 @@ import { DataTable, StatusBadge, Mono, LoadingState, ErrorState } from '@/compon
 import type { Tone } from '@/components/shared';
 import { BackBar, DetailTabs, Field, EmptyRow } from '@/pages/details/shared';
 import { useCRM } from '@/store/crm';
-import { activities, tasks, meetings, fmtINR } from '@/data/mock';
+import { fmtINR } from '@/lib/utils';
 import { MapPin } from 'lucide-react';
 
 type Tab = 'overview' | 'accounts' | 'contacts' | 'opportunities' | 'activities' | 'tasks' | 'meetings' | 'visits';
@@ -24,9 +24,9 @@ export default function CustomerDetail({ id, onBack }: { id: string; onBack: () 
   const accts = crm.accounts.filter(a => a.name === customer.name);
   const contactList = crm.contacts.filter(c => c.account === customer.name);
   const opps = crm.opportunities.filter(o => o.account === customer.name);
-  const acts = activities.filter(a => a.relatedTo === customer.name);
-  const tks = tasks.filter(t => t.related === customer.name);
-  const mts = meetings.filter(m => m.account === customer.name);
+  const acts = crm.activities.filter(a => a.relatedTo === customer.name);
+  const tks = crm.tasks.filter(t => t.related === customer.name);
+  const mts = crm.meetings.filter(m => m.account === customer.name);
   const vs = crm.visits.filter(v => v.customer === customer.name);
 
   const tabs: { id: Tab; label: string; count?: number }[] = [
@@ -37,9 +37,8 @@ export default function CustomerDetail({ id, onBack }: { id: string; onBack: () 
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <BackBar onBack={onBack} kicker={`Customers · ${customer.code}`} title={customer.name}
-        sub={`${customer.industry} · ${customer.city} · customer since ${customer.since}`}
         badges={[<StatusBadge key="s" label={customer.status} tone={cusTone(customer.status)} />]}
         actions={crm.can('CREATE', 'VISIT') && (
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCRM } from '@/store/crm';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle , DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -113,6 +113,7 @@ export default function AccountModal({ open, onClose, accountId }: { open: boole
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{accountId ? 'Edit Account' : 'Create Account'}</DialogTitle>
+          <DialogDescription className="sr-only">Please fill out or review the details below.</DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="mt-2 space-y-4">

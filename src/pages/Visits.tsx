@@ -3,7 +3,7 @@ import { useTracking } from '@/store/tracking';
 import { useCRM } from '@/store/crm';
 import { Plus, Play, CheckCircle } from 'lucide-react';
 import { StatusBadge, EmptyState } from '@/components/shared';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle , DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -75,7 +75,7 @@ export default function Visits() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Visits</h1>
@@ -90,7 +90,8 @@ export default function Visits() {
 
       <Dialog open={showCreate} onOpenChange={(isOpen) => !isOpen && !loading && setShowCreate(false)}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Plan New Visit</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Plan New Visit</DialogTitle>
+          <DialogDescription className="sr-only">Please fill out or review the details below.</DialogDescription></DialogHeader>
           <div className="mt-4 space-y-4">
             <div>
               <label className="mb-1.5 block text-[12.5px] font-medium text-muted-foreground">Customer ID *</label>
