@@ -51,7 +51,15 @@ export default function Tasks() {
     }
   };
 
-  const rows = useMemo(() => tasks.filter(t => f === 'All' || t.status === f), [tasks, f]);
+  const [search, setSearch] = useState('');
+  const rows = useMemo(() => {
+    let res = tasks.filter(t => f === 'All' || t.status === f);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      res = res.filter(t => t.title.toLowerCase().includes(q) || t.related?.toLowerCase().includes(q) || t.assignee?.toLowerCase().includes(q));
+    }
+    return res;
+  }, [tasks, f, search]);
   
   return (
     <div className="space-y-5">
@@ -59,7 +67,7 @@ export default function Tasks() {
         sub="Lifecycle: Open → In Progress → Completed (or Cancelled). Reassignment retains previous assignee in history and notifies the new one."
         action={can('CREATE', 'TASK') && <NewButton label="Create Task" onClick={handleCreate} />} />
       
-      <Toolbar placeholder="Search tasks…">
+      <Toolbar placeholder="Search tasks, assignee, related..." searchValue={search} onSearchChange={setSearch}>
         {['All', 'Open', 'In Progress', 'Completed', 'Cancelled'].map(s => (
           <span key={s} onClick={() => setF(s)}>
             <FilterChip label={s} active={f === s} />
@@ -70,53 +78,58 @@ export default function Tasks() {
       {error.tasks ? (
         <ErrorState title="Failed to load tasks" message={error.tasks} onRetry={fetchTasks} />
       ) : (
-        <DataTable
+        <DataTable<any>
           loading={loading.tasks}
-          head={['Task', 'Linked To', 'Assignee', 'Priority', 'Status', 'Due', 'Actions']}
-          rows={rows.map(t => {
-            const isClosed = t.status === 'Completed' || t.status === 'Cancelled';
-            
-            return [
-              <span className="font-medium">{t.title}</span>,
-              <Mono className="text-muted-foreground">{t.related}</Mono>,
-              t.assignee,
-              <StatusBadge label={t.priority as TaskPriority} tone={pTone(t.priority as TaskPriority)} />,
-              <StatusBadge label={t.status as TaskStatus} tone={sTone(t.status as TaskStatus)} />,
-              <Mono className={!isClosed && t.due <= new Date().toISOString().split('T')[0] ? 'font-semibold text-destructive' : 'text-muted-foreground'}>
-                {t.due.slice(5) || '—'}
-              </Mono>,
-              <div className="flex items-center gap-1.5">
-                {!isClosed && can('EDIT', 'TASK', t) && (
-                  <button title="Edit" onClick={() => handleEdit(t.id)} className="text-muted-foreground hover:text-foreground">
-                    <Edit2 className="size-3.5" />
-                  </button>
-                )}
-                {!isClosed && can('EDIT', 'TASK', t) && user?.role !== 'Employee' && (
-                  <button title="Reassign" onClick={() => handleReassign(t.id)} className="text-muted-foreground hover:text-foreground">
-                    <UserPlus className="size-3.5" />
-                  </button>
-                )}
-                {!isClosed && can('EDIT', 'TASK', t) && (
-                  <button title="Complete" onClick={() => completeTask(t.id, "Completed")} className="text-muted-foreground hover:text-primary">
-                    <CheckCircle2 className="size-3.5" />
-                  </button>
-                )}
-                {!isClosed && can('EDIT', 'TASK', t) && user?.role !== 'Employee' && (
-                  <button title="Cancel" onClick={() => handleCancel(t.id)} className="text-muted-foreground hover:text-destructive">
-                    <XCircle className="size-3.5" />
-                  </button>
-                )}
-                {can('DELETE', 'TASK', t) && user?.role === 'Super Admin' && (
-                  <button title="Delete" onClick={() => handleDelete(t.id)} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="size-3.5" />
-                  </button>
-                )}
-                {isClosed && (
-                  <Mono className="text-[10px] text-muted-foreground uppercase">{t.status}</Mono>
-                )}
-              </div>
-            ];
-          })}
+          columns={[
+            { header: 'Task', accessorKey: 'title', sortable: true, sortType: 'text', cell: (t) => <span className="font-medium">{t.title}</span> },
+            { header: 'Linked To', accessorKey: 'related', sortable: true, sortType: 'text', cell: (t) => <Mono className="text-muted-foreground">{t.related}</Mono> },
+            { header: 'Assignee', accessorKey: 'assignee', sortable: true, sortType: 'text' },
+            { header: 'Priority', accessorKey: 'priority', sortable: true, sortType: 'text', cell: (t) => <StatusBadge label={t.priority as TaskPriority} tone={pTone(t.priority as TaskPriority)} /> },
+            { header: 'Status', accessorKey: 'status', sortable: true, sortType: 'text', cell: (t) => <StatusBadge label={t.status as TaskStatus} tone={sTone(t.status as TaskStatus)} /> },
+            { header: 'Due', accessorKey: 'due', sortable: true, sortType: 'date', cell: (t) => {
+              const isClosed = t.status === 'Completed' || t.status === 'Cancelled';
+              return <Mono className={!isClosed && t.due <= new Date().toISOString().split('T')[0] ? 'font-semibold text-destructive' : 'text-muted-foreground'}>{t.due.slice(5) || '—'}</Mono>;
+            } },
+            { header: 'Actions', sortable: false, cell: (t) => {
+              const isClosed = t.status === 'Completed' || t.status === 'Cancelled';
+              return (
+                <div className="flex items-center gap-1.5">
+                  {!isClosed && can('EDIT', 'TASK', t) && (
+                    <button title="Edit" onClick={() => handleEdit(t.id)} className="text-muted-foreground hover:text-foreground">
+                      <Edit2 className="size-3.5" />
+                    </button>
+                  )}
+                  {!isClosed && can('EDIT', 'TASK', t) && user?.role !== 'Employee' && (
+                    <button title="Reassign" onClick={() => handleReassign(t.id)} className="text-muted-foreground hover:text-foreground">
+                      <UserPlus className="size-3.5" />
+                    </button>
+                  )}
+                  {!isClosed && can('EDIT', 'TASK', t) && (
+                    <button title="Complete" onClick={() => completeTask(t.id, "Completed")} className="text-muted-foreground hover:text-primary">
+                      <CheckCircle2 className="size-3.5" />
+                    </button>
+                  )}
+                  {!isClosed && can('EDIT', 'TASK', t) && user?.role !== 'Employee' && (
+                    <button title="Cancel" onClick={() => handleCancel(t.id)} className="text-muted-foreground hover:text-destructive">
+                      <XCircle className="size-3.5" />
+                    </button>
+                  )}
+                  {can('DELETE', 'TASK', t) && user?.role === 'Super Admin' && (
+                    <button title="Delete" onClick={() => handleDelete(t.id)} className="text-muted-foreground hover:text-destructive">
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
+                  {isClosed && (
+                    <Mono className="text-[10px] text-muted-foreground uppercase">{t.status}</Mono>
+                  )}
+                </div>
+              );
+            } },
+          ]}
+          data={rows}
+          pagination
+          defaultPageSize={10}
+          emptyMessage="No tasks found."
         />
       )}
 

@@ -3,6 +3,7 @@ import { CheckSquare, CalendarDays, AlertTriangle, MapPin, Funnel, ShieldCheck }
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCRM } from '@/store/crm';
 import type { NotifKind } from '@/store/crm';
 
@@ -13,6 +14,7 @@ const ICONS: Record<NotifKind, LucideIcon> = {
 
 export default function NotificationsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { notifications, markAllRead } = useCRM();
+  const navigate = useNavigate();
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -33,8 +35,19 @@ export default function NotificationsPanel({ open, onClose }: { open: boolean; o
           {notifications.length === 0 && <div className="p-6 text-center font-mono2 text-[11px] text-muted-foreground">No notifications.</div>}
           {notifications.map(n => {
             const Icon = ICONS[n.kind];
+            const handleClick = () => {
+              switch (n.kind) {
+                case 'task': navigate('/tasks'); break;
+                case 'meeting': navigate('/meetings'); break;
+                case 'lead': navigate('/leads'); break;
+                case 'gps': navigate('/tracking'); break;
+                case 'audit': navigate('/audit'); break;
+                default: navigate('/'); break;
+              }
+              onClose();
+            };
             return (
-              <div key={n.id} className={cn('flex gap-3 border-b border-border/60 px-4 py-3 last:border-0', !n.read && 'bg-muted-bg')}>
+              <button key={n.id} onClick={handleClick} className={cn('w-full flex text-left gap-3 border-b border-border/60 px-4 py-3 last:border-0 hover:bg-muted-bg transition-colors', !n.read && 'bg-muted-bg')}>
                 <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-md', n.read ? 'bg-secondary text-muted-foreground' : 'bg-success-bg text-success')}>
                   <Icon aria-hidden="true" className="size-4" />
                 </div>
@@ -44,7 +57,7 @@ export default function NotificationsPanel({ open, onClose }: { open: boolean; o
                   <div className="kicker mt-1 text-muted-foreground">{n.time}</div>
                 </div>
                 {!n.read && <span className="ml-auto mt-1.5 size-1.5 shrink-0 rounded-full bg-destructive" />}
-              </div>
+              </button>
             );
           })}
         </div>

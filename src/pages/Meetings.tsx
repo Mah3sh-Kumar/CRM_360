@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { PageHeader, StatusBadge, NewButton, Mono, ErrorState, LoadingState, EmptyState } from '@/components/shared';
+import { useEffect, useState, useMemo } from 'react';
+import { PageHeader, StatusBadge, NewButton, Mono, ErrorState, LoadingState, EmptyState, Toolbar } from '@/components/shared';
 import type { Tone } from '@/components/shared';
 import { useCRM } from '@/store/crm';
 import { Video, MapPin, Phone, Users } from 'lucide-react';
@@ -19,6 +19,13 @@ const tone = (s: string): Tone => s === 'Completed' ? 'ink' : s === 'Cancelled' 
 export default function Meetings() {
   const { meetings, employees, fetchMeetings, can, loading, error } = useCRM();
   const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredMeetings = useMemo(() => {
+    if (!search.trim()) return meetings;
+    const q = search.toLowerCase();
+    return meetings.filter(m => m.title?.toLowerCase().includes(q) || m.related_module?.toLowerCase().includes(q));
+  }, [meetings, search]);
 
   useEffect(() => {
     fetchMeetings();
@@ -70,29 +77,32 @@ export default function Meetings() {
             })}
           </div>
 
-          <div className="rounded-lg border border-border bg-card mt-5">
-            <div className="border-b border-border px-4 py-3 kicker text-muted-foreground">All Meetings</div>
-            {meetings.length === 0 && <div className="py-8"><EmptyState title="No Meetings" description="No meetings scheduled yet." /></div>}
-            {meetings.map(m => {
-              const Icon = mIcon[m.meeting_type] || Video;
-              const organizerName = employees.find(e => Number(e.id) === m.organizer_id)?.name || m.organizer_id;
-              const dateStr = m.start_datetime ? m.start_datetime.split('T')[0].slice(5) : '';
-              const timeStr = m.start_datetime ? new Date(m.start_datetime).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) : '';
-              return (
-                <div key={m.id} className="flex items-center gap-3 border-b border-border/50 px-4 py-3 last:border-0">
-                  <span className="flex size-8 items-center justify-center rounded-md bg-secondary"><Icon className="size-4" /></span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-medium">{m.title}</div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {m.related_module ? `${m.related_module} #${m.related_record_id}` : 'General'} · Org: {organizerName}
+          <div className="mt-5 space-y-3">
+            <Toolbar placeholder="Search meetings, modules..." searchValue={search} onSearchChange={setSearch} />
+            <div className="rounded-lg border border-border bg-card">
+              <div className="border-b border-border px-4 py-3 kicker text-muted-foreground">All Meetings</div>
+              {filteredMeetings.length === 0 && <div className="py-8"><EmptyState title="No Meetings" description="No meetings matched your criteria." /></div>}
+              {filteredMeetings.map((m: any) => {
+                const Icon = mIcon[m.meeting_type] || Video;
+                const organizerName = employees.find(e => Number(e.id) === m.organizer_id)?.name || m.organizer_id;
+                const dateStr = m.start_datetime ? m.start_datetime.split('T')[0].slice(5) : '';
+                const timeStr = m.start_datetime ? new Date(m.start_datetime).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) : '';
+                return (
+                  <div key={m.id} className="flex items-center gap-3 border-b border-border/50 px-4 py-3 last:border-0">
+                    <span className="flex size-8 items-center justify-center rounded-md bg-secondary"><Icon className="size-4" /></span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-medium">{m.title}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {m.related_module ? `${m.related_module} #${m.related_record_id}` : 'General'} · Org: {organizerName}
+                      </div>
                     </div>
+                    <Mono className="text-muted-foreground">{dateStr} · {timeStr}</Mono>
+                    <StatusBadge label={m.meeting_type} tone="blue" />
+                    <StatusBadge label={m.status} tone={tone(m.status)} />
                   </div>
-                  <Mono className="text-muted-foreground">{dateStr} · {timeStr}</Mono>
-                  <StatusBadge label={m.meeting_type} tone="blue" />
-                  <StatusBadge label={m.status} tone={tone(m.status)} />
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </>
       )}

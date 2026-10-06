@@ -30,6 +30,38 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
 
+  // Search states
+  const [searchComp, setSearchComp] = React.useState('');
+  const [searchEmp, setSearchEmp] = React.useState('');
+  const [searchCust, setSearchCust] = React.useState('');
+
+  const filteredCompanies = React.useMemo(() => {
+    let res = companies;
+    if (searchComp.trim()) {
+      const q = searchComp.toLowerCase();
+      res = res.filter(c => c.name.toLowerCase().includes(q) || c.code?.toLowerCase().includes(q) || c.city?.toLowerCase().includes(q));
+    }
+    return res;
+  }, [companies, searchComp]);
+
+  const filteredEmployees = React.useMemo(() => {
+    let res = employees;
+    if (searchEmp.trim()) {
+      const q = searchEmp.toLowerCase();
+      res = res.filter(e => e.name.toLowerCase().includes(q) || e.code?.toLowerCase().includes(q) || e.email?.toLowerCase().includes(q) || e.role?.toLowerCase().includes(q));
+    }
+    return res;
+  }, [employees, searchEmp]);
+
+  const filteredCustomers = React.useMemo(() => {
+    let res = customers;
+    if (searchCust.trim()) {
+      const q = searchCust.toLowerCase();
+      res = res.filter(c => c.name.toLowerCase().includes(q) || c.code?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || c.phone?.toLowerCase().includes(q) || c.industry?.toLowerCase().includes(q) || c.owner?.toLowerCase().includes(q));
+    }
+    return res;
+  }, [customers, searchCust]);
+
   const handleCompanySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -107,32 +139,41 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
       <PageHeader kicker="Masters · Module 17" title="Companies"
         sub="Primary organisational entity. Multi-company deployment with complete data isolation. Company Code must be unique."
         action={<><ImportExport />{crm.can('CREATE', 'COMPANY') && <NewButton label="Create Company" onClick={() => setShowCompanyModal(true)} />}</>} />
-      <Toolbar placeholder="Search companies…"><FilterChip label="Active" active /><FilterChip label="Inactive" /></Toolbar>
+      <Toolbar placeholder="Search companies, code, city..." searchValue={searchComp} onSearchChange={setSearchComp}>
+        <FilterChip label="Active" active />
+        <FilterChip label="Inactive" />
+      </Toolbar>
       {crm.error.companies ? (
         <ErrorState title="Failed to load companies" message={crm.error.companies} onRetry={crm.fetchCompanies} />
       ) : (
-        <DataTable
+        <DataTable<any>
           loading={crm.loading.companies}
-          head={['Code', 'Company', 'Industry', 'City', 'Country', 'Employees', 'Status', 'Created On', 'Actions']}
-          rows={companies.map(c => [
-            <Mono className="text-muted-foreground">{c.code}</Mono>,
-            <span className="font-medium">{c.name}</span>,
-            <span className="text-muted-foreground">{c.industry}</span>,
-            c.city, c.country,
-            <Mono>{c.employees}</Mono>,
-            <StatusBadge label={c.status} tone={c.status === 'Active' ? 'green' : 'gray'} />,
-            <Mono className="text-muted-foreground">{c.createdOn}</Mono>,
-            <div className="flex gap-2">
-              {crm.can('EDIT', 'COMPANY') && (
-                <button 
-                  onClick={() => handleStatusChange(c.id, c.status)} 
-                  className="text-[11px] font-medium text-blue-600 hover:underline"
-                >
-                  {c.status === 'Active' ? 'Deactivate' : 'Activate'}
-                </button>
-              )}
-            </div>
-          ])}
+          columns={[
+            { header: 'Code', accessorKey: 'code', sortable: true, sortType: 'text', cell: (c) => <Mono className="text-muted-foreground">{c.code}</Mono> },
+            { header: 'Company', accessorKey: 'name', sortable: true, sortType: 'text', cell: (c) => <span className="font-medium">{c.name}</span> },
+            { header: 'Industry', accessorKey: 'industry', sortable: true, sortType: 'text', cell: (c) => <span className="text-muted-foreground">{c.industry}</span> },
+            { header: 'City', accessorKey: 'city', sortable: true, sortType: 'text' },
+            { header: 'Country', accessorKey: 'country', sortable: true, sortType: 'text' },
+            { header: 'Employees', accessorKey: 'employees', sortable: true, sortType: 'number', cell: (c) => <Mono>{c.employees}</Mono> },
+            { header: 'Status', accessorKey: 'status', sortable: true, sortType: 'text', cell: (c) => <StatusBadge label={c.status} tone={c.status === 'Active' ? 'green' : 'gray'} /> },
+            { header: 'Created On', accessorKey: 'createdOn', sortable: true, sortType: 'date', cell: (c) => <Mono className="text-muted-foreground">{c.createdOn}</Mono> },
+            { header: 'Actions', sortable: false, cell: (c) => (
+              <div className="flex gap-2">
+                {crm.can('EDIT', 'COMPANY') && (
+                  <button 
+                    onClick={() => handleStatusChange(c.id, c.status)} 
+                    className="text-[11px] font-medium text-blue-600 hover:underline"
+                  >
+                    {c.status === 'Active' ? 'Deactivate' : 'Activate'}
+                  </button>
+                )}
+              </div>
+            )}
+          ]}
+          data={filteredCompanies}
+          pagination
+          defaultPageSize={10}
+          emptyMessage="No companies found."
         />
       )}
 
@@ -174,34 +215,44 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
       <PageHeader kicker="Masters · Module 18" title="Employees"
         sub="Central user repository. Reporting manager defines hierarchy visibility. GPS tracking opt-in controls geo module access."
         action={<><ImportExport />{crm.can('CREATE', 'EMPLOYEE') && <NewButton label="Create Employee" onClick={() => setShowEmpModal(true)} />}</>} />
-      <Toolbar placeholder="Search employees…"><FilterChip label="All Companies" active /><FilterChip label="GPS Enabled" /></Toolbar>
+      <Toolbar placeholder="Search employees, code, email, role..." searchValue={searchEmp} onSearchChange={setSearchEmp}>
+        <FilterChip label="All Companies" active />
+        <FilterChip label="GPS Enabled" />
+      </Toolbar>
       {crm.error.employees ? (
         <ErrorState title="Failed to load employees" message={crm.error.employees} onRetry={crm.fetchEmployees} />
       ) : (
-        <DataTable
+        <DataTable<any>
           loading={crm.loading.employees}
-          head={['Code', 'Employee', 'Email', 'Company', 'Designation', 'Reports To', 'Role', 'GPS', 'Status', 'Actions']}
-          rows={employees.map(e => [
-            <Mono className="text-muted-foreground">{e.code}</Mono>,
-            <div><div className="font-medium">{e.name}</div><Mono className="text-muted-foreground">{e.mobile}</Mono></div>,
-            <Mono className="text-muted-foreground">{e.email}</Mono>,
-            <span className="text-muted-foreground">{e.company}</span>,
-            e.designation,
-            <span className="text-muted-foreground">{e.manager}</span>,
-            <StatusBadge label={e.role} tone={e.role === 'Company Admin' ? 'ink' : e.role === 'Manager' ? 'blue' : 'sage'} />,
-            <StatusBadge label={e.gps ? 'On' : 'Off'} tone={e.gps ? 'green' : 'gray'} />,
-            <StatusBadge label={e.status} tone={empTone(e.status)} />,
-            <div className="flex gap-2">
-              {crm.can('EDIT', 'EMPLOYEE') && e.id !== crm.user?.id && (
-                <button 
-                  onClick={() => handleEmpStatusChange(e.id, e.status)} 
-                  className="text-[11px] font-medium text-blue-600 hover:underline"
-                >
-                  {e.status === 'Active' ? 'Deactivate' : 'Activate'}
-                </button>
-              )}
-            </div>
-          ])}
+          columns={[
+            { header: 'Code', accessorKey: 'code', sortable: true, sortType: 'text', cell: (e) => <Mono className="text-muted-foreground">{e.code}</Mono> },
+            { header: 'Employee', accessorKey: 'name', sortable: true, sortType: 'text', cell: (e) => (
+              <div><div className="font-medium">{e.name}</div><Mono className="text-muted-foreground">{e.mobile}</Mono></div>
+            )},
+            { header: 'Email', accessorKey: 'email', sortable: true, sortType: 'text', cell: (e) => <Mono className="text-muted-foreground">{e.email}</Mono> },
+            { header: 'Company', accessorKey: 'company', sortable: true, sortType: 'text', cell: (e) => <span className="text-muted-foreground">{e.company}</span> },
+            { header: 'Designation', accessorKey: 'designation', sortable: true, sortType: 'text' },
+            { header: 'Reports To', accessorKey: 'manager', sortable: true, sortType: 'text', cell: (e) => <span className="text-muted-foreground">{e.manager}</span> },
+            { header: 'Role', accessorKey: 'role', sortable: true, sortType: 'text', cell: (e) => <StatusBadge label={e.role} tone={e.role === 'Super Admin' ? 'purple' : e.role === 'Company Admin' ? 'blue' : e.role === 'Manager' ? 'green' : 'amber'} /> },
+            { header: 'GPS', accessorKey: 'gps', sortable: true, sortType: 'boolean', cell: (e) => <StatusBadge label={e.gps ? 'On' : 'Off'} tone={e.gps ? 'green' : 'gray'} /> },
+            { header: 'Status', accessorKey: 'status', sortable: true, sortType: 'text', cell: (e) => <StatusBadge label={e.status} tone={empTone(e.status)} /> },
+            { header: 'Actions', sortable: false, cell: (e) => (
+              <div className="flex gap-2">
+                {crm.can('EDIT', 'EMPLOYEE') && e.id !== crm.user?.id && (
+                  <button 
+                    onClick={() => handleEmpStatusChange(e.id, e.status)} 
+                    className="text-[11px] font-medium text-blue-600 hover:underline"
+                  >
+                    {e.status === 'Active' ? 'Deactivate' : 'Activate'}
+                  </button>
+                )}
+              </div>
+            )}
+          ]}
+          data={filteredEmployees}
+          pagination
+          defaultPageSize={10}
+          emptyMessage="No employees found."
         />
       )}
 
@@ -280,7 +331,7 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
       <PageHeader kicker="Masters · Module 19" title="Customers"
         sub="Lifecycle: Prospect → Active → Inactive. Created directly or through lead conversion. Click a customer to open Customer 360."
         action={<><ImportExport />{crm.can('CREATE', 'CUSTOMER') && <NewButton label="Create Customer" onClick={() => setShowCustModal(true)} />}</>} />
-      <Toolbar placeholder="Search customers…"><FilterChip label="All Statuses" active /><FilterChip label="All Owners" /></Toolbar>
+      <Toolbar placeholder="Search customers, owner, email..." searchValue={searchCust} onSearchChange={setSearchCust}><FilterChip label="All Statuses" active /><FilterChip label="All Owners" /></Toolbar>
       {crm.error.customers ? (
         <ErrorState title="Failed to load customers" message={crm.error.customers} onRetry={crm.fetchCustomers} />
       ) : (
@@ -309,7 +360,7 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
               </div>
             )}
           ]}
-          data={customers}
+          data={filteredCustomers}
           pagination
           defaultPageSize={10}
           emptyMessage="No customers found."
