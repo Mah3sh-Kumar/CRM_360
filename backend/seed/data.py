@@ -6,11 +6,11 @@ NOW = datetime.utcnow()
 
 COMPANIES = [
     {
-        "company_code": "CMP-ACME",
-        "name": "ACME Corporation",
-        "email": "contact@acme.com",
+        "company_code": "CMP-APEX",
+        "name": "Apex Industries",
+        "email": "contact@apexindustries.com",
         "phone": "+91-9876543210",
-        "address_line_1": "12, ACME Estate",
+        "address_line_1": "12, Apex Estate",
         "city": "Mumbai",
         "state": "Maharashtra",
         "country": "India",
@@ -65,16 +65,16 @@ COMPANIES = [
 EMPLOYEES = [
     {"emp_code": "EMP-SA-01", "name": "System Administrator", "email": "superadmin@crm360.local", "role": "Super Admin", "company_code": None, "manager_code": None, "designation": "Super Admin", "password": "Super@123"},
     
-    {"emp_code": "EMP-CA-01", "name": "Company Administrator", "email": "admin@acme.crm360.local", "role": "Company Admin", "company_code": "CMP-ACME", "manager_code": None, "designation": "CEO", "password": "Admin@123"},
-    {"emp_code": "EMP-MGR-01", "name": "Sales Manager", "email": "manager@acme.crm360.local", "role": "Manager", "company_code": "CMP-ACME", "manager_code": "EMP-CA-01", "designation": "Sales Head", "password": "Manager@123"},
-    {"emp_code": "EMP-01", "name": "Sales Employee", "email": "employee@acme.crm360.local", "role": "Employee", "company_code": "CMP-ACME", "manager_code": "EMP-MGR-01", "designation": "Sales Exec", "password": "Employee@123"},
-    {"emp_code": "EMP-02", "name": "Kavya Shah", "email": "kavya.s@acme.com", "role": "Employee", "company_code": "CMP-ACME", "manager_code": "EMP-MGR-01", "designation": "Sales Exec"},
+    {"emp_code": "EMP-CA-01", "name": "Company Administrator", "email": "admin@apex.crm360.local", "role": "Company Admin", "company_code": "CMP-APEX", "manager_code": None, "designation": "CEO", "password": "Admin@123"},
+    {"emp_code": "EMP-MGR-01", "name": "Aditya Verma", "email": "aditya.v@apexindustries.com", "role": "Manager", "company_code": "CMP-APEX", "manager_code": "EMP-CA-01", "designation": "Sales Head", "password": "Manager@123"},
+    {"emp_code": "EMP-01", "name": "Arjun Mehta", "email": "arjun.m@apexindustries.com", "role": "Employee", "company_code": "CMP-APEX", "manager_code": "EMP-MGR-01", "designation": "Sales Exec", "password": "Employee@123"},
+    {"emp_code": "EMP-02", "name": "Kavya Shah", "email": "kavya.s@apexindustries.com", "role": "Employee", "company_code": "CMP-APEX", "manager_code": "EMP-MGR-01", "designation": "Sales Exec"},
 
-    {"emp_code": "EMP-CA-02", "name": "Vikram Singh", "email": "vikram.s@trident.com", "role": "Company Admin", "company_code": "CMP-TRID", "manager_code": None, "designation": "Director"},
+    {"emp_code": "EMP-CA-02", "name": "Priya Nair", "email": "priya.n@trident.com", "role": "Company Admin", "company_code": "CMP-TRID", "manager_code": None, "designation": "Director"},
     {"emp_code": "EMP-MGR-02", "name": "Amit Sharma", "email": "amit.s@trident.com", "role": "Manager", "company_code": "CMP-TRID", "manager_code": "EMP-CA-02", "designation": "Regional Manager"},
     {"emp_code": "EMP-03", "name": "Rahul Deshmukh", "email": "rahul.d@trident.com", "role": "Employee", "company_code": "CMP-TRID", "manager_code": "EMP-MGR-02", "designation": "Field Agent"},
     
-    {"emp_code": "EMP-CA-03", "name": "Suresh Reddy", "email": "suresh.r@sterling.com", "role": "Company Admin", "company_code": "CMP-STER", "manager_code": None, "designation": "MD"},
+    {"emp_code": "EMP-CA-03", "name": "Rohan Kulkarni", "email": "rohan.k@sterling.com", "role": "Company Admin", "company_code": "CMP-STER", "manager_code": None, "designation": "MD"},
     {"emp_code": "EMP-MGR-03", "name": "Neha Joshi", "email": "neha.j@sterling.com", "role": "Manager", "company_code": "CMP-STER", "manager_code": "EMP-CA-03", "designation": "Sales Manager"},
     {"emp_code": "EMP-04", "name": "Sneha Patil", "email": "sneha.p@sterling.com", "role": "Employee", "company_code": "CMP-STER", "manager_code": "EMP-MGR-03", "designation": "Executive"},
     {"emp_code": "EMP-05", "name": "Karan Patel", "email": "karan.p@sterling.com", "role": "Employee", "company_code": "CMP-STER", "manager_code": "EMP-MGR-03", "designation": "Executive"}
@@ -96,16 +96,17 @@ def random_phone():
 
 def generate_leads(count=30):
     leads = []
+    revenues = [250000, 580000, 900000, 1250000, 1750000, 2400000, 3500000, 4800000]
     for i in range(count):
         leads.append({
             "lead_name": f"Lead {random.choice(FIRST_NAMES)} {random.choice(LAST_NAMES)}",
-            "company_name": f"Enterprise {i}",
+            "company_name": f"Enterprise {random.randint(1000, 9999)}",
             "contact_person": f"{random.choice(FIRST_NAMES)} {random.choice(LAST_NAMES)}",
             "mobile_number": random_phone(),
-            "email_address": f"lead{i}@example.com",
+            "email_address": f"lead_{random.randint(10000, 99999)}@example.com",
             "lead_source": random.choice(LEAD_SOURCES),
             "industry": random.choice(INDUSTRIES),
             "status": random.choice(LEAD_STATUSES),
-            "expected_revenue": random.randint(10000, 500000)
+            "expected_revenue": random.choice(revenues)
         })
     return leads

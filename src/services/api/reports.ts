@@ -1,15 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
-async function fetcher<T>(endpoint: string): Promise<T> {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
-  if (!res.ok) throw new Error('API Error');
-  return res.json();
-}
+import { apiFetch, getApiUrl } from '@/lib/api';
 
 export interface ReportFilter {
   start_date?: string;
@@ -40,9 +29,9 @@ const buildQueryString = (filters?: ReportFilter, format: string = 'json') => {
 
 export const reportsApi = {
   fetchReport: (path: string, filters?: ReportFilter) => 
-    fetcher<ReportResponse>(`/reports/${path}?${buildQueryString(filters)}`),
+    apiFetch<ReportResponse>(`/reports/${path}?${buildQueryString(filters)}`),
 
   getDownloadUrl: (endpoint: string, format: 'csv' | 'xlsx' | 'pdf', filters?: ReportFilter) => {
-    return `${API_URL}/reports/${endpoint}?${buildQueryString(filters, format)}`;
+    return getApiUrl(`/reports/${endpoint}?${buildQueryString(filters, format)}`);
   }
 };

@@ -25,6 +25,7 @@ const toneMap: Record<string, string> = {
   blue: 'bg-info-bg text-info border-info-border',
   gray: 'bg-neutral-bg text-neutral border-neutral-border',
   ink: 'bg-ink text-primary-foreground border-ink',
+  purple: 'bg-[#F3E8FF] text-[#7C3AED] border-[#8B5CF6]',
 };
 export type Tone = keyof typeof toneMap;
 
@@ -37,12 +38,18 @@ export function StatusBadge({ label, tone = 'gray' }: { label: string; tone?: To
   );
 }
 
-export function Toolbar({ placeholder, children }: { placeholder: string; children?: React.ReactNode }) {
+export function Toolbar({ placeholder, children, searchValue, onSearchChange }: { placeholder: string; children?: React.ReactNode; searchValue?: string; onSearchChange?: (val: string) => void }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
         <Search aria-hidden="true" className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-        <input aria-label={placeholder} placeholder={placeholder} className="h-8 w-full rounded-md border border-input bg-card pl-8 pr-3 text-[12.5px] outline-none focus:ring-2 focus:ring-ring/30" />
+        <input 
+          aria-label={placeholder} 
+          placeholder={placeholder} 
+          value={searchValue || ''}
+          onChange={(e) => onSearchChange?.(e.target.value)}
+          className="h-8 w-full rounded-md border border-input bg-card pl-8 pr-3 text-[12.5px] outline-none focus:ring-2 focus:ring-ring/30" 
+        />
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {children}

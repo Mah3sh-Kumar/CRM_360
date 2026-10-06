@@ -15,17 +15,34 @@ const stages: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Proposal Sent', 
 export default function Leads({ onOpen }: { onOpen: (id: string) => void }) {
   const { leads, conversions, user, loading, error, fetchLeads } = useCRM();
   const [filter, setFilter] = useState<string>('All');
+  const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const mine = user?.role === 'Employee';
   const pool = useMemo(() => mine ? leads.filter(l => l.owner === user?.name) : leads, [mine, leads, user?.name]);
-  const rows = useMemo(() => pool.filter(l => filter === 'All' || l.status === filter), [pool, filter]);
+  
+  const rows = useMemo(() => {
+    let result = pool;
+    if (filter !== 'All') {
+      result = result.filter(l => l.status === filter);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      result = result.filter(l => 
+        l.name.toLowerCase().includes(q) || 
+        l.company?.toLowerCase().includes(q) || 
+        l.phone?.toLowerCase().includes(q) ||
+        l.code?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [pool, filter, search]);
 
   return (
     <div className="space-y-5">
       <PageHeader kicker="CRM Operations · Module 21" title={mine ? 'My Leads' : 'Leads'}
         sub="Lifecycle: New → Contacted → Qualified → Proposal Sent → Negotiation → Won. Won leads can be converted to Customer + Account from the detail view."
         action={<><ImportExport /><NewButton label="Create Lead" onClick={() => setShowModal(true)} /></>} />
-      <Toolbar placeholder="Search lead name, company, phone…">
+      <Toolbar placeholder="Search lead name, company, phone…" searchValue={search} onSearchChange={setSearch}>
         {['All', ...stages].map(s => <FilterChip key={s} label={s} active={filter === s} onClick={() => setFilter(filter === s ? 'All' : s)} />)}
       </Toolbar>
       <div className="flex gap-px overflow-x-auto overflow-y-hidden rounded-lg border border-border bg-border">

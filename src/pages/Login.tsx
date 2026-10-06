@@ -10,9 +10,9 @@ import { Loader2 } from 'lucide-react';
 
 const QUICK: { role: Role; icon: React.ElementType; email: string; password: string; name: string; blurb: string }[] = [
   { role: 'Super Admin', icon: ShieldCheck, email: 'superadmin@crm360.local', password: 'Super@123', name: 'System Administrator', blurb: 'Full platform control · all companies · audit logs' },
-  { role: 'Company Admin', icon: Building2, email: 'admin@acme.crm360.local', password: 'Admin@123', name: 'Company Administrator', blurb: 'ACME Corporation · employees, customers, audit' },
-  { role: 'Manager', icon: Users, email: 'manager@acme.crm360.local', password: 'Manager@123', name: 'Sales Manager', blurb: 'Team pipeline · live tracking · visits · reports' },
-  { role: 'Employee', icon: MapPin, email: 'employee@acme.crm360.local', password: 'Employee@123', name: 'Sales Employee', blurb: 'Own leads & tasks · check-in / visits' },
+  { role: 'Company Admin', icon: Building2, email: 'admin@apex.crm360.local', password: 'Admin@123', name: 'Company Administrator', blurb: 'Apex Industries · employees, customers, audit' },
+  { role: 'Manager', icon: Users, email: 'aditya.v@apexindustries.com', password: 'Manager@123', name: 'Sales Manager', blurb: 'Team pipeline · live tracking · visits · reports' },
+  { role: 'Employee', icon: MapPin, email: 'arjun.m@apexindustries.com', password: 'Employee@123', name: 'Sales Employee', blurb: 'Own leads & tasks · check-in / visits' },
 ];
 
 export default function Login() {

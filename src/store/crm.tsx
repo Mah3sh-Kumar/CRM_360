@@ -1,11 +1,10 @@
 // src/store/crm.tsx
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import {
-  leads as seedLeads, opportunities as seedOpps, visits as seedVisits,
-  employees as seedEmployees, trackPoints as seedTrackPoints, tasks as seedTasks,
+  employees as seedEmployees
 } from '@/data/mock';
 import type { Lead, Account, Customer, Contact, Opportunity, Visit, OppStage, Company, Employee, TrackPoint, Activity, Task } from '@/data/mock';
-import { can, getDataScope } from '@/auth/rbac';
+import { can } from '@/auth/rbac';
 
 export type Role = 'Super Admin' | 'Company Admin' | 'Manager' | 'Employee';
 
@@ -173,19 +172,28 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       setIsInitializing(false);
     }
   }, []);
+
+  React.useEffect(() => {
+    if (user?.role) {
+      document.documentElement.setAttribute('data-role', user.role);
+    } else {
+      document.documentElement.removeAttribute('data-role');
+    }
+  }, [user?.role]);
   
   const [companiesState, setCompaniesState] = useState<Company[]>([]);
   const [employeesState, setEmployeesState] = useState<Employee[]>([]);
-  const [leadsState, setLeads] = useState<Lead[]>(seedLeads);
+  const [leadsState, setLeads] = useState<Lead[]>([]);
   const [accountsState, setAccounts] = useState<Account[]>([]);
   const [customersState, setCustomers] = useState<Customer[]>([]);
   const [contactsState, setContacts] = useState<Contact[]>([]);
-  const [opportunitiesState, setOpportunities] = useState<Opportunity[]>(seedOpps);
+  const [opportunitiesState, setOpportunities] = useState<Opportunity[]>([]);
   const [activitiesState, setActivities] = useState<Activity[]>([]);
-  const [tasksState, setTasksState] = useState<Task[]>(seedTasks);
+  const [tasksState, setTasksState] = useState<Task[]>([]);
   const [meetingsState, setMeetingsState] = useState<any[]>([]);
-  const [visitsState, setVisits] = useState<Visit[]>(seedVisits);
+  const [visitsState, setVisits] = useState<Visit[]>([]);
   const [conversionsState, setConversions] = useState<Conversion[]>([]);
+  const [trackPointsState] = useState<TrackPoint[]>([]);
   const [checkIn, setCheckIn] = useState<CheckInState>({ checkedIn: false, since: null, fix: null, address: '' });
 
   const [loading, setLoadingState] = useState<Record<string, boolean>>({});
@@ -454,7 +462,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
           mobile: e.mobile,
           company: companiesState.find(c => c.id === (e.company_id ? e.company_id.toString() : ""))?.name || '—',
           designation: e.designation,
-          manager: e.manager_id ? e.manager_id.toString() : '—',
+          manager: data.find((m: any) => m.id === e.manager_id)?.name || '—',
           role: e.role,
           gps: e.gps_tracking_enabled,
           status: e.status,
@@ -976,8 +984,8 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
           account: accountsState.find((a: any) => a.id === o.account_id.toString())?.name || o.account_id.toString(),
           owner: employeesState.find((e: any) => e.id === o.owner_id.toString())?.name || o.owner_id.toString(),
           stage: o.stage,
-          expectedRevenue: o.expected_revenue,
-          probability: o.probability,
+          expectedRevenue: Number(o.expected_revenue),
+          probability: Number(o.probability),
           closeDate: new Date(o.expected_close_date).toISOString().split('T')[0],
           status: o.status
         }));
@@ -1322,7 +1330,23 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       });
       if (res.ok) {
         const data = await res.json();
-        setMeetingsState(data);
+        const mapped = data.map((m: any) => ({
+          id: m.id.toString(),
+          companyId: m.company_id.toString(),
+          title: m.title,
+          type: m.meeting_type,
+          organizer: employeesState.find((e: any) => e.id.toString() === m.organizer_id.toString())?.name || m.organizer_id.toString(),
+          organizerId: m.organizer_id.toString(),
+          start: new Date(m.start_datetime).toISOString(),
+          end: new Date(m.end_datetime).toISOString(),
+          location: m.location,
+          agenda: m.agenda,
+          status: m.status,
+          date: new Date(m.start_datetime).toISOString().split('T')[0],
+          time: new Date(m.start_datetime).toISOString().split('T')[1].substring(0,5),
+          mode: m.location ? 'In-Person' : 'Online'
+        }));
+        setMeetingsState(mapped);
       } else {
         throw new Error("Failed to fetch");
       }
@@ -1449,28 +1473,20 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
   // RBAC Scoped Data
-  const scopedCompanies = companiesState; // Already filtered by backend
-  const scopedEmployees = employeesState; // Already filtered by backend
-  const scopedLeads = useMemo(() => getDataScope('LEAD', user, leadsState, employeesState) as Lead[], [leadsState, user, employeesState]);
-  const scopedAccounts = useMemo(() => getDataScope('ACCOUNT', user, accountsState, employeesState) as Account[], [accountsState, user, employeesState]);
-  const scopedCustomers = useMemo(() => getDataScope('CUSTOMER', user, customersState, employeesState) as Customer[], [customersState, user, employeesState]);
-  const scopedContacts = useMemo(() => getDataScope('CONTACT', user, contactsState, employeesState) as Contact[], [contactsState, user, employeesState]);
-  const scopedOpps = useMemo(() => getDataScope('OPPORTUNITY', user, opportunitiesState, employeesState) as Opportunity[], [opportunitiesState, user, employeesState]);
-  const scopedActivities = useMemo(() => getDataScope('ACTIVITY', user, activitiesState, employeesState) as Activity[], [activitiesState, user, employeesState]);
-  const scopedTasks = useMemo(() => getDataScope('TASK', user, tasksState, employeesState) as Task[], [tasksState, user, employeesState]);
-  const scopedMeetings = useMemo(() => {
-    if (!user) return [];
-    if (user.role === 'Super Admin') return meetingsState;
-    if (user.role === 'Company Admin') return meetingsState.filter(m => m.company_id === parseInt(user.companyId));
-    if (user.role === 'Manager') {
-        return meetingsState.filter(m => m.company_id === parseInt(user.companyId));
-    }
-    // Employee only sees where they are organizer or participant
-    return meetingsState.filter(m => m.company_id === parseInt(user.companyId));
-    // The backend is already filtering correctly for Employee and Manager based on roles, so we just return the state
-  }, [meetingsState, user]);
-  const scopedVisits = useMemo(() => getDataScope('VISIT', user, visitsState, employeesState) as Visit[], [visitsState, user, employeesState]);
-  const scopedTrackPoints = useMemo(() => getDataScope('TRACKING', user, seedTrackPoints, employeesState) as TrackPoint[], [user, employeesState]);
+  // Security Requirement: The frontend consumes already-scoped backend responses.
+  // We no longer download global datasets and filter them locally.
+  const scopedCompanies = companiesState;
+  const scopedEmployees = employeesState;
+  const scopedLeads = leadsState;
+  const scopedAccounts = accountsState;
+  const scopedCustomers = customersState;
+  const scopedContacts = contactsState;
+  const scopedOpps = opportunitiesState;
+  const scopedActivities = activitiesState;
+  const scopedTasks = tasksState;
+  const scopedMeetings = meetingsState;
+  const scopedVisits = visitsState;
+  const scopedTrackPoints = trackPointsState;
   
   // Audits and Notifications only scoped by Tenant Isolation for simplicity here
   const scopedAudit = useMemo(() => user?.role === 'Super Admin' ? auditState : auditState.filter(a => a.companyId === user?.companyId), [auditState, user]);
@@ -1552,3 +1568,4 @@ export function navAllowed(role: Role, page: string): boolean {
   const mockUser: SessionUser = { role, name: '', email: '', code: '', companyId: '', company: '', designation: '', manager: '', id: '' };
   return can('VIEW', module, mockUser, null, []);
 }
+
