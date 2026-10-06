@@ -45,6 +45,9 @@ export interface SessionUser {
   company: string; 
   designation: string; 
   manager: string;
+  mobile: string;
+  status: string;
+  dateOfJoining: string;
 }
 
 export interface AuditEntry { id: number; companyId: string; time: string; user: string; module: string; action: string; record: string; }
@@ -83,6 +86,7 @@ export interface CRMStore {
   isInitializing: boolean;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   
   // RBAC Filtered Data
   companies: Company[]; employees: Employee[];
@@ -184,7 +188,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         })
         .then(me => {
           if (me.id) {
-            setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—" });
+            setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—", mobile: me.mobile, status: me.status, dateOfJoining: me.date_of_joining });
           }
         })
         .catch(err => {
@@ -267,7 +271,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       const meRes = await customFetch("http://localhost:8000/api/auth/me", { headers: { Authorization: `Bearer ${data.access_token}` } });
       if (meRes.ok) {
         const me = await meRes.json();
-        setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—" });
+        setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—", mobile: me.mobile, status: me.status, dateOfJoining: me.date_of_joining });
         return null;
       }
       return "Failed to load user profile.";
@@ -278,6 +282,20 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("crm_token");
     setUser(null);
     setCheckIn({ checkedIn: false, since: null, fix: null, address: '' });
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem("crm_token");
+    if (!token) return;
+    try {
+      const meRes = await customFetch("http://localhost:8000/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+      if (meRes.ok) {
+        const me = await meRes.json();
+        setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—", mobile: me.mobile, status: me.status, dateOfJoining: me.date_of_joining });
+      }
+    } catch (e) {
+      console.error("Failed to refresh user", e);
+    }
   }, []);
 
   const logAudit = useCallback((module: string, action: string, record: string) => {
@@ -1522,7 +1540,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const scopedConversions = useMemo(() => user?.role === 'Super Admin' ? conversionsState : conversionsState.filter(c => c.companyId === user?.companyId), [conversionsState, user]);
 
   const value = useMemo<CRMStore>(() => ({
-    user, isInitializing, login, logout, can: canFn,
+    user, isInitializing, login, logout, refreshUser, can: canFn,
     companies: scopedCompanies, employees: scopedEmployees,
     leads: scopedLeads, accounts: scopedAccounts, customers: scopedCustomers, 
     contacts: scopedContacts, opportunities: scopedOpps, activities: scopedActivities, tasks: scopedTasks, meetings: scopedMeetings, visits: scopedVisits, conversions: scopedConversions,
@@ -1541,7 +1559,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     fetchTasks, createTask, updateTask, completeTask, cancelTask, assignTask, deleteTask,
     fetchMeetings, createMeeting, updateMeeting, completeMeeting, cancelMeeting
   }), [
-    user, isInitializing, login, logout, canFn,
+    user, isInitializing, login, logout, refreshUser, canFn,
     scopedCompanies, scopedEmployees,
     scopedLeads, scopedAccounts, scopedCustomers, scopedContacts, scopedOpps, scopedActivities, scopedTasks, scopedMeetings, scopedVisits, scopedConversions,
     scopedTrackPoints,
@@ -1569,31 +1587,5 @@ export function useCRM(): CRMStore {
   return ctx;
 }
 
-// ---- RBAC (SRS access matrix) ----
-export function navAllowed(role: Role, page: string): boolean {
-  // Use our centralized RBAC logic for navigation as well
-  // For simplicity, map pages to modules
-  const moduleMap: Record<string, import('@/auth/rbac').Module> = {
-    'companies': 'COMPANY',
-    'employees': 'EMPLOYEE',
-    'customers': 'CUSTOMER',
-    'leads': 'LEAD',
-    'accounts': 'ACCOUNT',
-    'contacts': 'CONTACT',
-    'opportunities': 'OPPORTUNITY',
-    'activities': 'ACTIVITY',
-    'tasks': 'TASK',
-    'meetings': 'MEETING',
-    'tracking': 'TRACKING',
-    'visits': 'VISIT',
-    'audit-logs': 'AUDIT',
-  };
 
-  const module = moduleMap[page];
-  if (!module) return true; // Default allow for Dashboard, Reports, etc. if not strictly mapped here.
-
-  // Simulate a minimal context check for navigation
-  const mockUser: SessionUser = { role, name: '', email: '', code: '', companyId: '', company: '', designation: '', manager: '', id: '' };
-  return can('VIEW', module, mockUser, null, []);
-}
 

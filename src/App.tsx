@@ -6,7 +6,8 @@ import {
   CalendarDays, MapPin, Footprints, Landmark, UserCog, Contact2, BarChart3,
   Search, Bell, ChevronDown, Timer, LogIn, LogOut, Compass, ShieldCheck, Menu, X, Loader2
 } from 'lucide-react';
-import { CRMProvider, useCRM, navAllowed } from '@/store/crm';
+import { CRMProvider, useCRM } from '@/store/crm';
+import { navAllowed } from '@/auth/rbac';
 import { TrackingProvider, useTracking } from '@/store/tracking';
 import { StatusBadge } from '@/components/shared';
 import Login from '@/pages/Login';
@@ -27,6 +28,7 @@ const Visits = lazy(() => import('@/pages/Visits'));
 const Masters = lazy(() => import('@/pages/Masters'));
 const Reports = lazy(() => import('@/pages/Reports'));
 const AuditLogs = lazy(() => import('@/pages/AuditLogs'));
+const Profile = lazy(() => import('@/pages/Profile'));
 const LeadDetail = lazy(() => import('@/pages/details/LeadDetail'));
 const AccountDetail = lazy(() => import('@/pages/details/AccountDetail'));
 const CustomerDetail = lazy(() => import('@/pages/details/CustomerDetail'));
@@ -296,6 +298,11 @@ function Shell() {
                       <div className="font-mono2 text-[10.5px] text-muted-foreground">{user.email}</div>
                       <div className="font-mono2 text-[10.5px] text-muted-foreground">{user.company} · {user.code}</div>
                     </div>
+                    <button onClick={() => go('profile')}
+                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[12.5px] font-medium transition-colors hover:bg-secondary">
+                      <UserCog className="size-3.5 text-muted-foreground" /> Profile
+                    </button>
+                    <div className="my-1 h-px bg-border" />
                     <button onClick={() => crm.logout()}
                       className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[12.5px] font-medium text-destructive transition-colors hover:bg-destructive-bg">
                       <LogOut className="size-3.5" /> Logout
@@ -352,6 +359,7 @@ function MainApp() {
         
         <Route path="reports" element={<ProtectedRoute module="reports"><Reports /></ProtectedRoute>} />
         <Route path="audit-logs" element={<ProtectedRoute module="audit-logs"><AuditLogs /></ProtectedRoute>} />
+        <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         
         <Route path="*" element={<NotFound />} />
       </Route>
