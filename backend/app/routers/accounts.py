@@ -88,7 +88,7 @@ def get_accounts(
     if account_status:
         query = query.filter(Account.status == account_status)
         
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Account.id.desc()).offset(skip).limit(limit).all()
 
 @router.get("/{account_id}", response_model=AccountResponse)
 def get_account(

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import auth, companies, employees, customers, leads, accounts, contacts, opportunities, activities, tasks, meetings, tracking, visits, reports, audit
+from app.routers import auth, companies, employees, customers, leads, accounts, contacts, opportunities, activities, tasks, meetings, tracking, visits, reports, audit, dashboard
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -14,7 +14,7 @@ from app.core.audit import AuditMiddleware
 app.add_middleware(AuditMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict to frontend URL
+    allow_origins=settings.CORS_ORIGINS if hasattr(settings, "CORS_ORIGINS") else ["http://localhost:3000", "http://localhost:5173"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,6 +23,18 @@ app.add_middleware(
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"}
+    )
 
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(companies.router, prefix=f"{settings.API_V1_STR}/companies", tags=["companies"])
@@ -39,3 +51,4 @@ app.include_router(tracking.router, prefix=f"{settings.API_V1_STR}/tracking", ta
 app.include_router(visits.router, prefix=f"{settings.API_V1_STR}/visits", tags=["visits"])
 app.include_router(reports.router, prefix=f"{settings.API_V1_STR}", tags=["reports"])
 app.include_router(audit.router, prefix=f"{settings.API_V1_STR}/audit", tags=["audit"])
+app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["dashboard"])

@@ -89,7 +89,7 @@ def get_contacts(
     if contact_status:
         query = query.filter(Contact.status == contact_status)
         
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Contact.id.desc()).offset(skip).limit(limit).all()
 
 @router.get("/{contact_id}", response_model=ContactResponse)
 def get_contact(

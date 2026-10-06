@@ -34,7 +34,7 @@ def get_employees(
     if search:
         query = query.filter(Employee.name.contains(search) | Employee.email.contains(search) | Employee.employee_code.contains(search))
         
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Employee.id.desc()).offset(skip).limit(limit).all()
 
 @router.get("/{employee_id}", response_model=EmployeeResponse)
 def get_employee(

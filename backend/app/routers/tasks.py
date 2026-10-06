@@ -43,7 +43,7 @@ def validate_related_record(db: Session, module: str, record_id: int, company_id
     if not record:
         raise HTTPException(status_code=400, detail="Related record not found")
         
-    if record.company_id != company_id:
+    if user.role != "Super Admin" and record.company_id != company_id:
         raise HTTPException(status_code=403, detail="Related record belongs to a different company")
         
     # Check if record has status and is active (if applicable)
@@ -68,7 +68,7 @@ def create_task(
     assignee = db.query(Employee).filter(Employee.id == task_in.assigned_to_id).first()
     if not assignee:
         raise HTTPException(status_code=400, detail="Assigned employee not found")
-    if assignee.company_id != current_user.company_id:
+    if current_user.role != "Super Admin" and assignee.company_id != current_user.company_id:
         raise HTTPException(status_code=403, detail="Cannot assign task to an employee of a different company")
     if assignee.status != "Active":
         raise HTTPException(status_code=400, detail="Assigned employee is inactive")
@@ -84,11 +84,11 @@ def create_task(
             
     # Validate related record
     if task_in.related_record_id:
-        validate_related_record(db, task_in.related_module, task_in.related_record_id, current_user.company_id, current_user)
+        validate_related_record(db, task_in.related_module, task_in.related_record_id, assignee.company_id, current_user)
         
     db_task = Task(
         **task_in.dict(),
-        company_id=current_user.company_id,
+        company_id=assignee.company_id,
         assigned_by_id=current_user.id,
         status="Open"
     )
@@ -127,7 +127,7 @@ def read_tasks(
     if assigned_to_id:
         query = query.filter(Task.assigned_to_id == assigned_to_id)
         
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Task.id.desc()).offset(skip).limit(limit).all()
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
@@ -249,7 +249,7 @@ def assign_task(
     new_assignee = db.query(Employee).filter(Employee.id == task_in.assigned_to_id).first()
     if not new_assignee:
         raise HTTPException(status_code=400, detail="Assigned employee not found")
-    if new_assignee.company_id != current_user.company_id:
+    if current_user.role != "Super Admin" and new_assignee.company_id != current_user.company_id:
         raise HTTPException(status_code=403, detail="Cannot assign task to an employee of a different company")
     if new_assignee.status != "Active":
         raise HTTPException(status_code=400, detail="Assigned employee is inactive")

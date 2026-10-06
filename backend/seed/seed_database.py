@@ -413,10 +413,15 @@ def seed_audit_logs(db: Session):
     db.commit()
 
 def run_seed():
+    if os.environ.get("SEED_MODE") != "development":
+        print("ERROR: Destructive seed operation aborted.")
+        print("Set environment variable SEED_MODE=development to allow database reset and seed.")
+        sys.exit(1)
+        
     db = SessionLocal()
     try:
         print("Starting Database Seed...")
-        # reset_database(db)  # Removed to avoid deleting existing data
+        reset_database(db)
         
         c_map = seed_companies(db)
         e_map = seed_employees(db, c_map)

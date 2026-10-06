@@ -34,7 +34,7 @@ def get_leads(
     if search:
         query = query.filter(Lead.lead_name.contains(search) | Lead.contact_person.contains(search) | Lead.mobile_number.contains(search) | Lead.email_address.contains(search))
         
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Lead.id.desc()).offset(skip).limit(limit).all()
 
 @router.get("/{lead_id}", response_model=LeadResponse)
 def get_lead(

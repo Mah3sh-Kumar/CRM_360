@@ -1,10 +1,13 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
 
 class Customer(Base):
     __tablename__ = "customers"
+    __table_args__ = (
+        Index('ix_cust_company_owner', 'company_id', 'owner_id'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     customer_code = Column(String(50), unique=True, index=True, nullable=False)
