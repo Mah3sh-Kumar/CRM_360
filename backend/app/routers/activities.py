@@ -23,14 +23,15 @@ def validate_related_records(db: Session, company_id: int,
                              account_id: int, 
                              contact_id: Optional[int], 
                              opportunity_id: Optional[int], 
-                             assigned_employee_id: int):
+                             assigned_employee_id: int,
+                             current_user: Employee):
     # Account validation
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
         raise HTTPException(status_code=400, detail="Account Required")
     if account.status != "Active":
         raise HTTPException(status_code=400, detail="Account is not active")
-    if account.company_id != company_id:
+    if current_user.role != "Super Admin" and account.company_id != company_id:
         raise HTTPException(status_code=400, detail="Account belongs to a different company")
 
     # Contact validation
@@ -40,7 +41,7 @@ def validate_related_records(db: Session, company_id: int,
             raise HTTPException(status_code=400, detail="Contact not found")
         if contact.status != "Active":
             raise HTTPException(status_code=400, detail="Contact is not active")
-        if contact.company_id != company_id:
+        if current_user.role != "Super Admin" and contact.company_id != company_id:
             raise HTTPException(status_code=400, detail="Contact belongs to a different company")
     
     # Opportunity validation
@@ -49,7 +50,7 @@ def validate_related_records(db: Session, company_id: int,
         if not opportunity:
             raise HTTPException(status_code=400, detail="Opportunity not found")
         # Opportunity doesn't have an explicit 'status' Active in earlier phases, we might check stage not being lost, but let's assume it exists. If there's no active flag, just checking existence and company_id.
-        if opportunity.company_id != company_id:
+        if current_user.role != "Super Admin" and opportunity.company_id != company_id:
             raise HTTPException(status_code=400, detail="Opportunity belongs to a different company")
             
     # Assigned Employee validation
@@ -58,7 +59,7 @@ def validate_related_records(db: Session, company_id: int,
         raise HTTPException(status_code=400, detail="Employee not found")
     if assigned.status != "Active":
         raise HTTPException(status_code=400, detail="Employee Inactive")
-    if assigned.company_id != company_id:
+    if current_user.role != "Super Admin" and assigned.company_id != company_id:
         raise HTTPException(status_code=400, detail="Employee belongs to a different company")
 
 
@@ -95,7 +96,8 @@ def create_activity(
                              activity_in.account_id, 
                              activity_in.contact_id, 
                              activity_in.opportunity_id, 
-                             activity_in.assigned_employee_id)
+                             activity_in.assigned_employee_id,
+                             current_user)
                              
     # If creating for another employee, verify permissions
     if activity_in.assigned_employee_id != current_user.id:
@@ -212,7 +214,7 @@ def update_activity(
     new_assigned = update_data.get("assigned_employee_id", activity.assigned_employee_id)
     
     if any(k in update_data for k in ["account_id", "contact_id", "opportunity_id", "assigned_employee_id"]):
-        validate_related_records(db, activity.company_id, new_account, new_contact, new_opp, new_assigned)
+        validate_related_records(db, activity.company_id, new_account, new_contact, new_opp, new_assigned, current_user)
 
     try:
         for key, value in update_data.items():

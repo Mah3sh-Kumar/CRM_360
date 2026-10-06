@@ -117,7 +117,7 @@ def get_opportunities(
     if status_filter:
         query = query.filter(Opportunity.status == status_filter)
 
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Opportunity.id.desc()).offset(skip).limit(limit).all()
 
 @router.get("/{opp_id}", response_model=OpportunityOut)
 def get_opportunity(

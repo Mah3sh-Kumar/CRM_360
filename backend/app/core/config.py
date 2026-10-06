@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api"
     
     # SECURITY
-    SECRET_KEY: str = "supersecretkey_please_change_in_production_1234567890"
+    SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8 # 8 hours per SRS
     
     # DATABASE

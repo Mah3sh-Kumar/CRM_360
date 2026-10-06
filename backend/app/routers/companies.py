@@ -31,7 +31,7 @@ def get_companies(
     if status_filter:
         query = query.filter(Company.status == status_filter)
         
-    companies = query.offset(skip).limit(limit).all()
+    companies = query.order_by(Company.id.desc()).offset(skip).limit(limit).all()
     return companies
 
 @router.get("/{id}", response_model=CompanyResponse)

@@ -36,7 +36,7 @@ def get_customers(
     if search:
         query = query.filter(Customer.name.contains(search) | Customer.customer_code.contains(search) | Customer.email.contains(search))
         
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Customer.id.desc()).offset(skip).limit(limit).all()
 
 @router.get("/{customer_id}", response_model=CustomerResponse)
 def get_customer(

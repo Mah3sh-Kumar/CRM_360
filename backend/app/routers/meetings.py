@@ -180,7 +180,7 @@ def read_meetings(
     if end_date:
         query = query.filter(Meeting.start_datetime <= end_date)
         
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Meeting.id.desc()).offset(skip).limit(limit).all()
 
 @router.get("/{meeting_id}", response_model=MeetingDetailResponse)
 def read_meeting(

@@ -6,78 +6,251 @@ NOW = datetime.utcnow()
 
 COMPANIES = [
     {
-        "company_code": "CMP-APEX",
-        "name": "Apex Industries",
-        "email": "contact@apexindustries.com",
+        "company_code": "CMP-TECH",
+        "name": "TechNova Solutions",
+        "email": "contact@technova.com",
         "phone": "+91-9876543210",
-        "address_line_1": "12, Apex Estate",
+        "address_line_1": "12, Tech Estate",
         "city": "Mumbai",
         "state": "Maharashtra",
         "country": "India",
         "status": "Active"
     },
     {
-        "company_code": "CMP-TRID",
-        "name": "Trident Components",
-        "email": "info@tridentcomp.in",
+        "company_code": "CMP-GREEN",
+        "name": "GreenGrid Systems",
+        "email": "info@greengrid.in",
         "phone": "+91-9876543211",
-        "address_line_1": "45, Tech Park",
+        "address_line_1": "45, Green Park",
         "city": "Pune",
         "state": "Maharashtra",
         "country": "India",
         "status": "Active"
     },
     {
-        "company_code": "CMP-STER",
-        "name": "Sterling Pharma",
-        "email": "hello@sterlingpharma.in",
+        "company_code": "CMP-VERTEX",
+        "name": "Vertex Digital",
+        "email": "hello@vertex.in",
         "phone": "+91-9876543212",
-        "address_line_1": "88, Pharma Hub",
+        "address_line_1": "88, Vertex Hub",
         "city": "Hyderabad",
         "state": "Telangana",
-        "country": "India",
-        "status": "Active"
-    },
-    {
-        "company_code": "CMP-KAVE",
-        "name": "Kaveri Foods",
-        "email": "sales@kaverifoods.in",
-        "phone": "+91-9876543213",
-        "address_line_1": "101, Food Park",
-        "city": "Bengaluru",
-        "state": "Karnataka",
-        "country": "India",
-        "status": "Active"
-    },
-    {
-        "company_code": "CMP-ORBI",
-        "name": "Orbit Textiles",
-        "email": "contact@orbittextiles.in",
-        "phone": "+91-9876543214",
-        "address_line_1": "22, Textile Zone",
-        "city": "Ahmedabad",
-        "state": "Gujarat",
         "country": "India",
         "status": "Active"
     }
 ]
 
 EMPLOYEES = [
-    {"emp_code": "EMP-SA-01", "name": "System Administrator", "email": "superadmin@crm360.local", "role": "Super Admin", "company_code": None, "manager_code": None, "designation": "Super Admin", "password": "Super@123"},
-    
-    {"emp_code": "EMP-CA-01", "name": "Company Administrator", "email": "admin@apex.crm360.local", "role": "Company Admin", "company_code": "CMP-APEX", "manager_code": None, "designation": "CEO", "password": "Admin@123"},
-    {"emp_code": "EMP-MGR-01", "name": "Aditya Verma", "email": "aditya.v@apexindustries.com", "role": "Manager", "company_code": "CMP-APEX", "manager_code": "EMP-CA-01", "designation": "Sales Head", "password": "Manager@123"},
-    {"emp_code": "EMP-01", "name": "Arjun Mehta", "email": "arjun.m@apexindustries.com", "role": "Employee", "company_code": "CMP-APEX", "manager_code": "EMP-MGR-01", "designation": "Sales Exec", "password": "Employee@123"},
-    {"emp_code": "EMP-02", "name": "Kavya Shah", "email": "kavya.s@apexindustries.com", "role": "Employee", "company_code": "CMP-APEX", "manager_code": "EMP-MGR-01", "designation": "Sales Exec"},
-
-    {"emp_code": "EMP-CA-02", "name": "Priya Nair", "email": "priya.n@trident.com", "role": "Company Admin", "company_code": "CMP-TRID", "manager_code": None, "designation": "Director"},
-    {"emp_code": "EMP-MGR-02", "name": "Amit Sharma", "email": "amit.s@trident.com", "role": "Manager", "company_code": "CMP-TRID", "manager_code": "EMP-CA-02", "designation": "Regional Manager"},
-    {"emp_code": "EMP-03", "name": "Rahul Deshmukh", "email": "rahul.d@trident.com", "role": "Employee", "company_code": "CMP-TRID", "manager_code": "EMP-MGR-02", "designation": "Field Agent"},
-    
-    {"emp_code": "EMP-CA-03", "name": "Rohan Kulkarni", "email": "rohan.k@sterling.com", "role": "Company Admin", "company_code": "CMP-STER", "manager_code": None, "designation": "MD"},
-    {"emp_code": "EMP-MGR-03", "name": "Neha Joshi", "email": "neha.j@sterling.com", "role": "Manager", "company_code": "CMP-STER", "manager_code": "EMP-CA-03", "designation": "Sales Manager"},
-    {"emp_code": "EMP-04", "name": "Sneha Patil", "email": "sneha.p@sterling.com", "role": "Employee", "company_code": "CMP-STER", "manager_code": "EMP-MGR-03", "designation": "Executive"},
-    {"emp_code": "EMP-05", "name": "Karan Patel", "email": "karan.p@sterling.com", "role": "Employee", "company_code": "CMP-STER", "manager_code": "EMP-MGR-03", "designation": "Executive"}
+    {
+        "emp_code": "EMP-SA-01",
+        "name": "System Administrator",
+        "email": "admin@crm360.com",
+        "role": "Super Admin",
+        "company_code": None,
+        "manager_code": None,
+        "designation": "Super Admin",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-TECH-CA",
+        "name": "Company Administrator",
+        "email": "admin@technova.com",
+        "role": "Company Admin",
+        "company_code": "CMP-TECH",
+        "manager_code": None,
+        "designation": "CEO",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-TECH-MGR1",
+        "name": "TechNova Manager 1",
+        "email": "manager@technova.com",
+        "role": "Manager",
+        "company_code": "CMP-TECH",
+        "manager_code": "EMP-TECH-CA",
+        "designation": "Sales Head",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-TECH-MGR2",
+        "name": "TechNova Manager 2",
+        "email": "manager2@technova.com",
+        "role": "Manager",
+        "company_code": "CMP-TECH",
+        "manager_code": "EMP-TECH-CA",
+        "designation": "Regional Manager",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-TECH-01",
+        "name": "TechNova Employee 1",
+        "email": "employee@technova.com",
+        "role": "Employee",
+        "company_code": "CMP-TECH",
+        "manager_code": "EMP-TECH-MGR1",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-TECH-02",
+        "name": "TechNova Employee 2",
+        "email": "employee2@technova.com",
+        "role": "Employee",
+        "company_code": "CMP-TECH",
+        "manager_code": "EMP-TECH-MGR1",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-TECH-03",
+        "name": "TechNova Employee 3",
+        "email": "employee3@technova.com",
+        "role": "Employee",
+        "company_code": "CMP-TECH",
+        "manager_code": "EMP-TECH-MGR1",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-TECH-04",
+        "name": "TechNova Employee 4",
+        "email": "employee4@technova.com",
+        "role": "Employee",
+        "company_code": "CMP-TECH",
+        "manager_code": "EMP-TECH-MGR2",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-TECH-05",
+        "name": "TechNova Employee 5",
+        "email": "employee5@technova.com",
+        "role": "Employee",
+        "company_code": "CMP-TECH",
+        "manager_code": "EMP-TECH-MGR2",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-GREEN-CA",
+        "name": "GreenGrid Admin",
+        "email": "admin@greengrid.in",
+        "role": "Company Admin",
+        "company_code": "CMP-GREEN",
+        "manager_code": None,
+        "designation": "CEO",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-GREEN-MGR1",
+        "name": "GreenGrid Manager 1",
+        "email": "manager@greengrid.in",
+        "role": "Manager",
+        "company_code": "CMP-GREEN",
+        "manager_code": "EMP-GREEN-CA",
+        "designation": "Sales Head",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-GREEN-MGR2",
+        "name": "GreenGrid Manager 2",
+        "email": "manager2@greengrid.in",
+        "role": "Manager",
+        "company_code": "CMP-GREEN",
+        "manager_code": "EMP-GREEN-CA",
+        "designation": "Regional Manager",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-GREEN-01",
+        "name": "GreenGrid Employee 1",
+        "email": "employee@greengrid.in",
+        "role": "Employee",
+        "company_code": "CMP-GREEN",
+        "manager_code": "EMP-GREEN-MGR1",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-GREEN-02",
+        "name": "GreenGrid Employee 2",
+        "email": "employee2@greengrid.in",
+        "role": "Employee",
+        "company_code": "CMP-GREEN",
+        "manager_code": "EMP-GREEN-MGR1",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-GREEN-03",
+        "name": "GreenGrid Employee 3",
+        "email": "employee3@greengrid.in",
+        "role": "Employee",
+        "company_code": "CMP-GREEN",
+        "manager_code": "EMP-GREEN-MGR2",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-GREEN-04",
+        "name": "GreenGrid Employee 4",
+        "email": "employee4@greengrid.in",
+        "role": "Employee",
+        "company_code": "CMP-GREEN",
+        "manager_code": "EMP-GREEN-MGR2",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-VERTEX-CA",
+        "name": "Vertex Admin",
+        "email": "admin@vertex.in",
+        "role": "Company Admin",
+        "company_code": "CMP-VERTEX",
+        "manager_code": None,
+        "designation": "CEO",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-VERTEX-MGR1",
+        "name": "Vertex Manager",
+        "email": "manager@vertex.in",
+        "role": "Manager",
+        "company_code": "CMP-VERTEX",
+        "manager_code": "EMP-VERTEX-CA",
+        "designation": "Sales Head",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-VERTEX-01",
+        "name": "Vertex Employee 1",
+        "email": "employee@vertex.in",
+        "role": "Employee",
+        "company_code": "CMP-VERTEX",
+        "manager_code": "EMP-VERTEX-MGR1",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-VERTEX-02",
+        "name": "Vertex Employee 2",
+        "email": "employee2@vertex.in",
+        "role": "Employee",
+        "company_code": "CMP-VERTEX",
+        "manager_code": "EMP-VERTEX-MGR1",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    },
+    {
+        "emp_code": "EMP-VERTEX-03",
+        "name": "Vertex Employee 3",
+        "email": "employee3@vertex.in",
+        "role": "Employee",
+        "company_code": "CMP-VERTEX",
+        "manager_code": "EMP-VERTEX-MGR1",
+        "designation": "Sales Exec",
+        "password": "Password123!"
+    }
 ]
 
 # Provide fake data for generation

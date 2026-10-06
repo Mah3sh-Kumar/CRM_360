@@ -2,13 +2,13 @@ from typing import Generator, Optional, List, Set
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
+from sqlalchemy.orm import Session, joinedload
 from app.models.employee import Employee
 from app.core.security import ALGORITHM
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/swagger-login")
 
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
@@ -26,7 +26,10 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
         
-    user = db.query(Employee).filter(Employee.id == int(user_id)).first()
+    user = db.query(Employee).options(
+        joinedload(Employee.company),
+        joinedload(Employee.manager)
+    ).filter(Employee.id == int(user_id)).first()
     if user is None:
         raise credentials_exception
     if user.status != "Active":

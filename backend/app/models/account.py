@@ -1,10 +1,14 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Numeric
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Numeric, CheckConstraint, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
 
 class Account(Base):
     __tablename__ = "accounts"
+    __table_args__ = (
+        CheckConstraint('annual_revenue >= 0', name='chk_acc_revenue'),
+        Index('ix_acc_company_owner', 'company_id', 'owner_id'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(200), nullable=False)
