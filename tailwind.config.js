@@ -67,6 +67,11 @@ module.exports = {
           bg: "hsl(var(--info-bg))",
           border: "hsl(var(--info-border))",
         },
+        purple: {
+          DEFAULT: "hsl(var(--purple))",
+          bg: "hsl(var(--purple-bg))",
+          border: "hsl(var(--purple-border))",
+        },
         neutral: {
           DEFAULT: "hsl(var(--neutral))",
           bg: "hsl(var(--neutral-bg))",

@@ -4,6 +4,7 @@ import { PageHeader, DataTable, ErrorState, LoadingState, EmptyState, ChartCard,
 import { Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { reportsApi } from '@/services/api/reports';
+import { getChartConfig } from '@/components/ui/report-chart';
 
 type Cat = 'Leads' | 'Customers' | 'Opportunities' | 'Activities' | 'Tasks' | 'Meetings' | 'Visits' | 'Attendance' | 'Geo';
 const CATS: Cat[] = ['Leads', 'Customers', 'Opportunities', 'Activities', 'Tasks', 'Meetings', 'Visits', 'Attendance', 'Geo'];
@@ -203,7 +204,7 @@ export default function Reports() {
                 <ErrorState title="Report Error" message={error} />
               ) : apiData && apiData.rows.length > 0 ? (
                 <div className="space-y-4">
-                  {apiData.head?.length >= 2 && apiData.rawData.length > 0 && (
+                  {apiData.head?.length >= 2 && apiData.rawData.length > 0 && getChartConfig(apiData.head, apiData.rawData) && (
                     <ChartCard 
                       title={`${active.name} - Visualization`} 
                       onExport={() => handleDownload('pdf')}

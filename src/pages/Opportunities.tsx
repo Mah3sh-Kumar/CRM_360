@@ -93,7 +93,7 @@ export default function Opportunities({ onOpen }: { onOpen: (id: string) => void
           <div className="text-[12px] text-muted-foreground mt-0.5">Forecast = Expected Revenue × Probability</div>
         </div>
         <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto mt-3 sm:mt-0">
-          <ImportExport />
+          <ImportExport data={pool} filename="opportunities" />
           <NewButton label="Create Opportunity" onClick={() => setShowModal(true)} />
         </div>
       </div>
@@ -158,13 +158,15 @@ export default function Opportunities({ onOpen }: { onOpen: (id: string) => void
       {error.opportunities ? (
         <ErrorState title="Failed to load opportunities" message={error.opportunities} onRetry={fetchOpportunities} />
       ) : loading.opportunities ? (
-        <div className="flex gap-4 overflow-x-auto pb-4 items-start w-full min-h-[500px]">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 items-start w-full min-h-[500px]">
           {stages.map(st => (
             <div key={st} className="flex-none w-[85vw] sm:w-[320px] xl:flex-1 xl:min-w-[260px] flex flex-col gap-3">
               <div className="h-[76px] rounded-xl border border-border bg-card/50 p-3" />
-              {[1, 2, 3].map(i => (
-                <SkeletonCard key={i} className="h-[180px]" />
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
+                {[1, 2, 3].map(i => (
+                  <SkeletonCard key={i} className="h-[150px]" />
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -174,69 +176,67 @@ export default function Opportunities({ onOpen }: { onOpen: (id: string) => void
         <EmptyState title="No opportunities found" description="Try changing your search or filters." action={<button onClick={clearFilters} className="inline-flex h-8 items-center justify-center rounded-md border border-input bg-card px-4 text-[12.5px] font-medium text-foreground hover:bg-accent transition-colors">Clear Filters</button>} />
       ) : (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex gap-4 overflow-x-auto pb-4 items-start w-full flex-1">
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 items-start w-full flex-1">
              {stages.map(st => {
                 const opps = pool.filter(o => o.stage === st);
                 const total = opps.reduce((s, o) => s + Number(o.expectedRevenue), 0);
                 
                 if (filterStage !== 'All' && filterStage !== st) return null;
 
-                const isWon = st === 'Won';
-                const isLost = st === 'Lost';
+                const stageColorMap: Record<string, { bg: string, border: string, text: string, cardBg: string }> = {
+                  'Prospecting': { bg: 'bg-muted-bg', border: 'border-border', text: 'text-foreground', cardBg: 'bg-muted-bg/50' },
+                  'Qualification': { bg: 'bg-info-bg', border: 'border-info-border', text: 'text-info', cardBg: 'bg-info-bg/50' },
+                  'Proposal': { bg: 'bg-purple-bg', border: 'border-purple-border', text: 'text-purple', cardBg: 'bg-purple-bg/50' },
+                  'Negotiation': { bg: 'bg-warning-bg', border: 'border-warning-border', text: 'text-warning', cardBg: 'bg-warning-bg/50' },
+                  'Won': { bg: 'bg-success-bg', border: 'border-success-border', text: 'text-success', cardBg: 'bg-success-bg/40' },
+                  'Lost': { bg: 'bg-destructive-bg', border: 'border-destructive-border', text: 'text-destructive', cardBg: 'bg-destructive-bg/30' }
+                };
 
-                const stageHeaderClass = isWon 
-                  ? 'bg-success-bg border-success-border' 
-                  : isLost 
-                  ? 'bg-destructive-bg border-destructive-border' 
-                  : 'bg-card border-border';
+                const colors = stageColorMap[st] || { bg: 'bg-card', border: 'border-border', text: 'text-foreground', cardBg: 'bg-card' };
 
-                const stageTitleClass = isWon 
-                  ? 'text-success' 
-                  : isLost 
-                  ? 'text-destructive' 
-                  : 'text-foreground';
+                    const isSingleColumn = filterStage !== 'All';
+                    const listClass = isSingleColumn 
+                      ? "grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 auto-rows-max max-h-[calc(100vh-260px)] overflow-y-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+                      : "flex flex-col gap-3 max-h-[calc(100vh-260px)] overflow-y-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']";
 
-                return (
-                  <div key={st} className="flex-none w-[85vw] sm:w-[320px] xl:flex-1 xl:min-w-[260px] flex flex-col gap-3">
-                    <div className={`flex flex-col rounded-xl border p-3 shadow-sm ${stageHeaderClass}`}>
-                      <div className={`text-[11px] font-bold tracking-widest uppercase mb-1 ${stageTitleClass}`}>{st}</div>
-                      <div className="text-[12.5px] text-muted-foreground mb-0.5 font-medium">{opps.length} {opps.length === 1 ? 'opportunity' : 'opportunities'}</div>
-                      <div className="font-display text-[16px] font-semibold text-primary">{fmtINR(total)}</div>
-                    </div>
+                    return (
+                      <div key={st} className="flex-none w-[85vw] sm:w-[320px] xl:flex-1 xl:min-w-[260px] flex flex-col gap-3">
+                        <div className={`flex flex-col rounded-xl border-2 p-3 shadow-sm ${colors.bg} ${colors.border}`}>
+                          <div className={`text-[12px] font-extrabold tracking-[0.1em] uppercase mb-1 ${colors.text}`}>{st}</div>
+                          <div className="text-[12.5px] text-muted-foreground mb-0.5 font-medium">{opps.length} {opps.length === 1 ? 'opportunity' : 'opportunities'}</div>
+                          <div className="font-display text-[16px] font-semibold text-primary">{fmtINR(total)}</div>
+                        </div>
 
-                    <div className="space-y-3">
+                        <div className={listClass}>
                       {opps.map((o, i) => (
-                        <button key={o.id} onClick={() => onOpen(o.id)} style={{ animationDelay: `${i * 40}ms` }} className="group block w-full rounded-xl border border-border bg-card p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:transform-none fill-mode-both">
-                          <div className="text-[14px] font-semibold leading-snug text-foreground mb-2 line-clamp-2">{o.name}</div>
-                          
-                          <div className="flex items-center justify-between mb-2">
-                             <Mono className="text-muted-foreground font-medium group-hover:text-primary transition-colors">{o.code}</Mono>
+                        <button key={o.id} onClick={() => onOpen(o.id)} style={{ animationDelay: `${i * 30}ms` }} className={`group flex flex-col h-auto w-full rounded-xl border ${colors.border} ${colors.cardBg} p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer animate-in fade-in slide-in-from-bottom-2`}>
+                          <div className="flex items-start justify-between gap-2 mb-1.5 w-full">
+                             <div className="text-[13.5px] font-semibold leading-tight text-foreground line-clamp-2">{o.name}</div>
                              <StatusBadge label={`${o.probability}%`} tone={getProbTone(o.probability)} />
                           </div>
                           
-                          <div className="text-[12px] text-muted-foreground mb-3 flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground mb-2.5">
+                            <Mono className="group-hover:text-primary transition-colors">{o.code}</Mono>
                             <span className="size-1 rounded-full bg-muted-foreground/40 shrink-0"></span>
                             <span className="truncate">{o.account}</span>
                           </div>
 
-                          <div className="my-3 h-px bg-border/60" />
-
-                          <div className="flex items-end justify-between py-0.5">
-                            <div className="min-w-0 pr-2">
-                               <div className="text-[10px] text-muted-foreground mb-0.5 uppercase tracking-widest font-semibold">Revenue</div>
-                               <div className="font-display text-[15px] font-bold text-primary truncate">{fmtINR(Number(o.expectedRevenue))}</div>
+                          <div className="mt-auto w-full">
+                            <div className="flex items-center justify-between rounded-md bg-background/50 p-2 mb-2.5">
+                              <div className="min-w-0 pr-2">
+                                 <div className="text-[9.5px] text-muted-foreground mb-0.5 uppercase tracking-widest font-semibold">Revenue</div>
+                                 <div className="font-display text-[14px] font-bold text-primary truncate">{fmtINR(Number(o.expectedRevenue))}</div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                 <div className="text-[9.5px] text-muted-foreground mb-0.5 uppercase tracking-widest font-semibold">Closing</div>
+                                 <Mono className="text-[11px] font-medium">{o.closeDate.slice(5)}</Mono>
+                              </div>
                             </div>
-                            <div className="text-right shrink-0">
-                               <div className="text-[10px] text-muted-foreground mb-0.5 uppercase tracking-widest font-semibold">Closing</div>
-                               <Mono className="text-muted-foreground font-medium">{o.closeDate.slice(5)}</Mono>
+
+                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
+                              <div className="size-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold uppercase shrink-0">{o.owner.charAt(0)}</div>
+                              <span className="truncate">{o.owner}</span>
                             </div>
-                          </div>
-
-                          <div className="my-3 h-px bg-border/60" />
-
-                          <div className="flex items-center gap-2 text-[11.5px] text-muted-foreground bg-muted/40 px-2 py-1.5 rounded-md w-fit font-medium">
-                            <div className="size-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold uppercase shrink-0">{o.owner.charAt(0)}</div>
-                            <span className="truncate">{o.owner}</span>
                           </div>
                         </button>
                       ))}

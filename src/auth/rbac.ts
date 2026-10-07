@@ -181,6 +181,6 @@ export function navAllowed(role: Role, page: string): boolean {
   if (!module) return true; // Default allow for Dashboard, Reports, etc. if not strictly mapped here.
 
   // Simulate a minimal context check for navigation
-  const mockUser: SessionUser = { role, name: '', email: '', code: '', companyId: '', company: '', designation: '', manager: '', id: '' };
+  const mockUser = { role, name: '', email: '', code: '', companyId: '', company: '', designation: '', manager: '', id: '' } as SessionUser;
   return can('VIEW', module, mockUser, null, []);
 }

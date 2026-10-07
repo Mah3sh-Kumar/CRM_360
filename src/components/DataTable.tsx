@@ -57,7 +57,7 @@ export function DataTable<T>({
   // Legacy mode
   if (head && rows) {
     return (
-      <div className="overflow-x-auto rounded-lg border border-border bg-card relative">
+      <div className="overflow-x-auto no-scrollbar rounded-lg border border-border bg-card relative">
         {loading && (
           <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10 backdrop-blur-[1px]">
             <Spinner className="size-6 text-primary" />
@@ -166,7 +166,7 @@ export function DataTable<T>({
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      <div className="overflow-x-auto rounded-lg border border-border bg-card relative">
+      <div className="overflow-x-auto no-scrollbar rounded-lg border border-border bg-card relative">
         <table className="w-full text-[12.5px]">
           <thead>
             <tr className="border-b border-border bg-muted-bg">

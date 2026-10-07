@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "CRM 360"
+    PROJECT_NAME: str = "VIREON"
     API_V1_STR: str = "/api"
     
     # SECURITY

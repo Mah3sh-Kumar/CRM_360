@@ -41,7 +41,7 @@ export default function Leads({ onOpen }: { onOpen: (id: string) => void }) {
   return (
     <div className="space-y-4">
       <PageHeader kicker="CRM Operations · Module 21" title={mine ? 'My Leads' : 'Leads'}
-        action={<><ImportExport /><NewButton label="Create Lead" onClick={() => setShowModal(true)} /></>} />
+        action={<><ImportExport data={rows} filename="leads" /><NewButton label="Create Lead" onClick={() => setShowModal(true)} /></>} />
       <Toolbar placeholder="Search lead name, company, phone…" searchValue={search} onSearchChange={setSearch}>
         {['All', ...stages].map(s => <FilterChip key={s} label={s} active={filter === s} onClick={() => setFilter(filter === s ? 'All' : s)} />)}
       </Toolbar>

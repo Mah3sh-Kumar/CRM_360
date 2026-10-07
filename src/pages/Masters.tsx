@@ -137,7 +137,7 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
   if (tab === 'companies') return (
     <div className="space-y-4 relative">
       <PageHeader kicker="Masters · Module 17" title="Companies"
-        action={<><ImportExport />{crm.can('CREATE', 'COMPANY') && <NewButton label="Create Company" onClick={() => setShowCompanyModal(true)} />}</>} />
+        action={<><ImportExport data={filteredCompanies} filename="companies" />{crm.can('CREATE', 'COMPANY') && <NewButton label="Create Company" onClick={() => setShowCompanyModal(true)} />}</>} />
       <Toolbar placeholder="Search companies, code, city..." searchValue={searchComp} onSearchChange={setSearchComp}>
         <FilterChip label="Active" active />
         <FilterChip label="Inactive" />
@@ -213,7 +213,7 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
   if (tab === 'employees') return (
     <div className="space-y-4 relative">
       <PageHeader kicker="Masters · Module 18" title="Employees"
-        action={<><ImportExport />{crm.can('CREATE', 'EMPLOYEE') && <NewButton label="Create Employee" onClick={() => setShowEmpModal(true)} />}</>} />
+        action={<><ImportExport data={filteredEmployees} filename="employees" />{crm.can('CREATE', 'EMPLOYEE') && <NewButton label="Create Employee" onClick={() => setShowEmpModal(true)} />}</>} />
       <Toolbar placeholder="Search employees, code, email, role..." searchValue={searchEmp} onSearchChange={setSearchEmp}>
         <FilterChip label="All Companies" active />
         <FilterChip label="GPS Enabled" />
@@ -329,7 +329,7 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
   return (
     <div className="space-y-4">
       <PageHeader kicker="Masters · Module 19" title="Customers"
-        action={<><ImportExport />{crm.can('CREATE', 'CUSTOMER') && <NewButton label="Create Customer" onClick={() => setShowCustModal(true)} />}</>} />
+        action={<><ImportExport data={filteredCustomers} filename="customers" />{crm.can('CREATE', 'CUSTOMER') && <NewButton label="Create Customer" onClick={() => setShowCustModal(true)} />}</>} />
       <Toolbar placeholder="Search customers, owner, email..." searchValue={searchCust} onSearchChange={setSearchCust}><FilterChip label="All Statuses" active /><FilterChip label="All Owners" /></Toolbar>
       {crm.error.customers ? (
         <ErrorState title="Failed to load customers" message={crm.error.customers} onRetry={crm.fetchCustomers} />

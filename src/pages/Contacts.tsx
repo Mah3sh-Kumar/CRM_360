@@ -27,7 +27,7 @@ export default function Contacts() {
   return (
     <div className="space-y-4">
       <PageHeader kicker="CRM Operations · Module 23" title="Contacts"
-        action={<><ImportExport /><NewButton label="Create Contact" onClick={() => setShowModal(true)} /></>} />
+        action={<><ImportExport data={rows} filename="contacts" /><NewButton label="Create Contact" onClick={() => setShowModal(true)} /></>} />
       <Toolbar placeholder="Search contacts, accounts, email..." searchValue={search} onSearchChange={setSearch} />
       {error.contacts ? (
         <ErrorState title="Failed to load contacts" message={error.contacts} onRetry={fetchContacts} />

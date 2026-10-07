@@ -14,6 +14,7 @@ import Login from '@/pages/Login';
 import GlobalSearch from '@/components/GlobalSearch';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import NotFound from '@/pages/NotFound';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Leads = lazy(() => import('@/pages/Leads'));
@@ -197,14 +198,14 @@ function Shell() {
             <Compass className="size-4.5 text-sidebar" strokeWidth={2.4} />
           </div>
           <div>
-            <div className="font-display text-[15px] font-semibold tracking-tight text-white leading-none">CRM 360</div>
+            <div className="font-display text-[15px] font-semibold tracking-tight text-white leading-none">VIREON</div>
             <div className="kicker mt-1 text-sidebar-accent">{user.role}</div>
           </div>
           <button aria-label="Close menu" className="ml-auto flex size-7 items-center justify-center rounded-md text-sidebar-border hover:bg-white/10 md:hidden" onClick={() => setMobileNavOpen(false)}>
             <X className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        <nav className="flex-1 overflow-y-auto px-3 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           {NAV.map(g => {
             const items = g.items.filter(it => navAllowed(user.role, it.id));
             if (!items.length) return null;
@@ -240,11 +241,24 @@ function Shell() {
         <div className="border-t border-white/10 p-3">
           <button
             onClick={() => {
-              if (trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) { 
-                navigator.geolocation.getCurrentPosition((pos) => checkOut(pos.coords.latitude, pos.coords.longitude, 'GPS'));
-              }
-              else { 
-                navigator.geolocation.getCurrentPosition((pos) => checkIn(pos.coords.latitude, pos.coords.longitude, 'GPS'), () => setGeoMsg('GPS Required'));
+              const fallback = () => {
+                const lat = 19.2403; const lng = 73.1303; const addr = 'Fallback Location (GPS Failed)';
+                if (trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) {
+                  checkOut(lat, lng, addr);
+                } else {
+                  checkIn(lat, lng, addr).catch(() => setGeoMsg('Check-In Failed'));
+                }
+              };
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                  if (trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) { 
+                    checkOut(pos.coords.latitude, pos.coords.longitude, 'GPS');
+                  } else { 
+                    checkIn(pos.coords.latitude, pos.coords.longitude, 'GPS').catch(() => setGeoMsg('Check-In Failed'));
+                  }
+                }, fallback);
+              } else {
+                fallback();
               }
             }}
             className={cn('flex w-full items-center gap-2 rounded-md px-3 py-2 text-[12.5px] font-semibold transition-colors',
@@ -264,18 +278,23 @@ function Shell() {
           <button aria-label="Open menu" aria-expanded={mobileNavOpen} aria-controls="mobile-sidebar" className="flex size-9 items-center justify-center rounded-md border border-input bg-card text-muted-foreground md:hidden" onClick={() => setMobileNavOpen(true)}>
             <Menu className="size-4" aria-hidden="true" />
           </button>
-          <button aria-label="Search" onClick={() => setSearchOpen(true)} className="relative flex-1 text-left md:w-full md:max-w-sm md:flex-none">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <span className="flex h-9 w-full items-center rounded-md border border-input bg-card pl-9 pr-12 text-[13px] text-muted-foreground truncate">
-              <span className="hidden md:inline">Search leads, accounts, opportunities…</span>
-              <span className="md:hidden">Search...</span>
-            </span>
-            <kbd className="kicker absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-muted-foreground md:block">Ctrl K</kbd>
-          </button>
+          {!location.pathname.startsWith('/profile') ? (
+            <button aria-label="Search" onClick={() => setSearchOpen(true)} className="relative flex-1 text-left md:w-full md:max-w-sm md:flex-none">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <span className="flex h-9 w-full items-center rounded-md border border-input bg-card pl-9 pr-12 text-[13px] text-muted-foreground truncate">
+                <span className="hidden md:inline">Search leads, accounts, opportunities…</span>
+                <span className="md:hidden">Search...</span>
+              </span>
+              <kbd className="kicker absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-muted-foreground md:block">Ctrl K</kbd>
+            </button>
+          ) : (
+            <div className="flex-1" />
+          )}
           <div className="ml-auto flex items-center gap-2 md:gap-3">
             <div className="hidden sm:block">
               <StatusBadge label={(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? 'Checked-In' : 'Checked-Out'} tone={(trackingStatus?.is_checked_in && !trackingStatus?.is_checked_out) ? 'green' : 'gray'} />
             </div>
+            <ThemeToggle />
             <button aria-label="Notifications" aria-expanded={notifOpen} onClick={() => setNotifOpen(o => !o)} className="relative flex size-9 items-center justify-center rounded-md border border-input bg-card transition-colors hover:bg-secondary">
               <Bell className="size-4" aria-hidden="true" />
               {unread > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-destructive" />}
@@ -367,14 +386,18 @@ function MainApp() {
   );
 }
 
+import { ThemeProvider } from '@/components/ThemeProvider';
+
 export default function App() {
   return (
-    <CRMProvider>
-      <TrackingProvider>
-        <BrowserRouter>
-          <MainApp />
-        </BrowserRouter>
-      </TrackingProvider>
-    </CRMProvider>
+    <ThemeProvider defaultTheme="system" storageKey="crm-ui-theme">
+      <CRMProvider>
+        <TrackingProvider>
+          <BrowserRouter>
+            <MainApp />
+          </BrowserRouter>
+        </TrackingProvider>
+      </CRMProvider>
+    </ThemeProvider>
   );
 }

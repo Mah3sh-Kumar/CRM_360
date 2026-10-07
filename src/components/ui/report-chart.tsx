@@ -10,30 +10,35 @@ interface ReportChartProps {
   data: any[];
 }
 
+export function getChartConfig(columns: string[], data: any[]) {
+  if (!data || data.length === 0 || columns.length < 2) return null;
+
+  const catCol = columns[0];
+  
+  const numCols = columns.slice(1).filter(col => {
+    // Check if column has numbers. Exclude things that look like phone numbers or IDs.
+    return data.some(row => {
+      const val = row[col];
+      if (val === null || val === undefined || val === '') return false;
+      if (typeof val === 'number') return true;
+      const str = String(val).trim();
+      if (isNaN(Number(str))) return false;
+      // Exclude if it looks like a phone number (e.g. 10+ digits without decimals)
+      if (str.length >= 10 && !str.includes('.')) return false;
+      return true;
+    });
+  });
+
+  if (numCols.length === 0) return null;
+
+  const isTimeSeries = catCol.toLowerCase().includes('date') || 
+                       (data.length > 0 && typeof data[0][catCol] === 'string' && !isNaN(Date.parse(data[0][catCol])));
+
+  return { catCol, numCols, isTimeSeries };
+}
+
 export function ReportChart({ columns, data }: ReportChartProps) {
-  const chartConfig = useMemo(() => {
-    if (!data || data.length === 0 || columns.length < 2) return null;
-
-    // Detect categorical column (usually the first column)
-    const catCol = columns[0];
-    
-    // Detect numerical columns
-    const numCols = columns.slice(1).filter(col => 
-      data.some(row => typeof row[col] === 'number' || !isNaN(Number(row[col])))
-    );
-
-    if (numCols.length === 0) return null;
-
-    // Check if it's time series
-    const isTimeSeries = catCol.toLowerCase().includes('date') || 
-                         (data.length > 0 && typeof data[0][catCol] === 'string' && !isNaN(Date.parse(data[0][catCol])));
-
-    return {
-      catCol,
-      numCols,
-      isTimeSeries
-    };
-  }, [columns, data]);
+  const chartConfig = useMemo(() => getChartConfig(columns, data), [columns, data]);
 
   if (!chartConfig) return null;
 

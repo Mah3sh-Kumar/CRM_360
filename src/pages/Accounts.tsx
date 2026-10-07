@@ -32,7 +32,7 @@ export default function Accounts({ onOpen }: { onOpen: (id: string) => void }) {
   return (
     <div className="space-y-4">
       <PageHeader kicker="CRM Operations · Module 22" title={mine ? 'My Accounts' : 'Accounts'}
-        action={<><ImportExport /><NewButton label="Create Account" onClick={() => setShowModal(true)} /></>} />
+        action={<><ImportExport data={rows} filename="accounts" /><NewButton label="Create Account" onClick={() => setShowModal(true)} /></>} />
       <Toolbar placeholder="Search accounts, industry, city..." searchValue={search} onSearchChange={setSearch}>
         {/* Intentionally keeping filters as UI only since they are missing the actual data enum. 
             If there are specific ones, they can be implemented similar to leads. */}

@@ -1,4 +1,4 @@
-# 🚀 CRM 360 - Comprehensive CRM System
+# 🚀 VIREON - Comprehensive CRM System
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
@@ -8,7 +8,7 @@
 
 ## 📖 1. Project Overview
 
-CRM 360 is a full-featured Customer Relationship Management (CRM) platform
+VIREON is a full-featured Customer Relationship Management (CRM) platform
 designed to streamline sales, marketing, and support processes. It provides
 advanced tools for managing leads, accounts, contacts, opportunities,
 activities, and tasks, alongside robust features like field force tracking,

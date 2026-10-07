@@ -40,15 +40,15 @@ export default function Login() {
       {/* Left Panel - Premium Brand Side */}
       <div className="relative hidden w-[45%] overflow-hidden bg-zinc-950 lg:flex flex-col justify-center p-12 text-white border-r border-border/10">
         {/* Dynamic Background Elements */}
-        <div className="absolute -top-[20%] -left-[10%] h-[600px] w-[600px] rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute -bottom-[20%] -right-[10%] h-[600px] w-[600px] rounded-full bg-purple-600/20 blur-[120px]" />
+        <div className="absolute -top-[20%] -left-[10%] h-[600px] w-[600px] rounded-full bg-primary/20 blur-[120px]" />
+        <div className="absolute -bottom-[20%] -right-[10%] h-[600px] w-[600px] rounded-full bg-accent/20 blur-[120px]" />
         
         <div className="relative z-10 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700 mb-12">
           <div className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20">
             <Compass className="size-6 text-white" strokeWidth={2.5} />
           </div>
           <div>
-            <div className="font-display text-2xl font-bold tracking-tight">CRM 360</div>
+            <div className="font-display text-2xl font-bold tracking-tight">VIREON</div>
             <div className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase mt-0.5">Enterprise Edition</div>
           </div>
         </div>
@@ -67,7 +67,7 @@ export default function Login() {
           <div className="mt-10 grid gap-4">
             {['Lead to Account Conversion', 'GPS-Verified Customer Visits', 'Advanced Role-Based Access'].map((feature, i) => (
               <div key={i} className="flex items-center gap-4 text-[15px] font-medium text-zinc-300">
-                <div className="flex size-7 items-center justify-center rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-inner">
+                <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary shadow-inner">
                   <ShieldCheck className="size-4" />
                 </div>
                 {feature}

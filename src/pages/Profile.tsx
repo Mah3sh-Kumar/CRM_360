@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCRM } from '@/store/crm';
-import { User, Mail, Phone, Hash, Building2, MapPin, ShieldCheck, Key, Settings, Loader2, Save, X, EyeOff, Eye, CheckCircle2, FileText, Briefcase, Activity, Landmark, Users, HandCoins, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, Hash, Building2, ShieldCheck, Key, Loader2, Save, CheckCircle2, FileText, Briefcase, Activity, Landmark, Users, HandCoins, AlertCircle } from 'lucide-react';
 import { StatusBadge } from '@/components/shared';
 
 export default function Profile() {
@@ -159,40 +159,43 @@ export default function Profile() {
     const cards = [];
     
     if (user.role === 'Super Admin') {
-      cards.push({ label: 'Companies', value: stats.totalCompanies, icon: Landmark, color: 'text-blue-500' });
+      cards.push({ label: 'Companies', value: stats.totalCompanies, icon: Landmark, color: 'text-primary' });
       cards.push({ label: 'Employees', value: stats.totalEmployees, icon: Users, color: 'text-sage' });
-      cards.push({ label: 'Customers', value: stats.totalCustomers, icon: Building2, color: 'text-indigo-500' });
+      cards.push({ label: 'Customers', value: stats.totalCustomers, icon: Building2, color: 'text-primary' });
       cards.push({ label: 'Opportunities', value: stats.totalOpportunities, icon: HandCoins, color: 'text-amber-500' });
     } else if (user.role === 'Company Admin') {
       cards.push({ label: 'Employees', value: stats.companyEmployees, icon: Users, color: 'text-sage' });
-      cards.push({ label: 'Active', value: stats.activeEmployees, icon: CheckCircle2, color: 'text-green-500' });
-      cards.push({ label: 'Customers', value: stats.customers, icon: Building2, color: 'text-indigo-500' });
+      cards.push({ label: 'Active', value: stats.activeEmployees, icon: CheckCircle2, color: 'text-success' });
+      cards.push({ label: 'Customers', value: stats.customers, icon: Building2, color: 'text-primary' });
       cards.push({ label: 'Opportunities', value: stats.opportunities, icon: HandCoins, color: 'text-amber-500' });
     } else if (user.role === 'Manager') {
       cards.push({ label: 'Team Size', value: stats.teamSize, icon: Users, color: 'text-sage' });
       cards.push({ label: 'Team Opportunities', value: stats.teamOpportunities, icon: HandCoins, color: 'text-amber-500' });
-      cards.push({ label: 'Team Tasks', value: stats.teamTasks, icon: Activity, color: 'text-blue-500' });
-      cards.push({ label: 'Team Attendance', value: stats.teamAttendance, icon: CheckCircle2, color: 'text-green-500' });
+      cards.push({ label: 'Team Tasks', value: stats.teamTasks, icon: Activity, color: 'text-primary' });
+      cards.push({ label: 'Team Attendance', value: stats.teamAttendance, icon: CheckCircle2, color: 'text-success' });
     } else {
-      cards.push({ label: 'Assigned Leads', value: stats.assignedLeads, icon: User, color: 'text-blue-500' });
+      cards.push({ label: 'Assigned Leads', value: stats.assignedLeads, icon: User, color: 'text-primary' });
       cards.push({ label: 'Open Opportunities', value: stats.openOpportunities, icon: HandCoins, color: 'text-amber-500' });
-      cards.push({ label: 'Pending Tasks', value: stats.pendingTasks, icon: Activity, color: 'text-indigo-500' });
-      cards.push({ label: 'Attendance Days', value: stats.attendanceSummary, icon: CheckCircle2, color: 'text-green-500' });
+      cards.push({ label: 'Pending Tasks', value: stats.pendingTasks, icon: Activity, color: 'text-primary' });
+      cards.push({ label: 'Attendance Days', value: stats.attendanceSummary, icon: CheckCircle2, color: 'text-success' });
     }
 
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((c, i) => (
-          <div key={i} className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-            <div className={`flex size-12 items-center justify-center rounded-lg bg-secondary ${c.color}`}>
-              <c.icon className="size-6" />
+        {cards.map((c, i) => {
+          const bgTone = c.color.replace('text-', 'bg-').replace('-500', '-500/10').replace('text-sage', 'bg-sage/10');
+          return (
+            <div key={i} className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-primary/30">
+              <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 ${bgTone} ${c.color}`}>
+                <c.icon className="size-5.5" strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-2xl font-bold tracking-tight text-foreground">{c.value}</div>
+                <div className="truncate text-[12.5px] font-medium text-muted-foreground">{c.label}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-2xl font-bold tracking-tight text-card-foreground">{c.value}</div>
-              <div className="text-[13px] font-medium text-muted-foreground">{c.label}</div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };
@@ -201,46 +204,46 @@ export default function Profile() {
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
       {/* Header */}
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-        <div className="h-32 bg-gradient-to-r from-sage/90 to-sage md:h-40" />
+        <div className="h-36 bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-500 md:h-48" />
         <div className="px-6 pb-6 sm:px-8">
           <div className="relative -mt-12 flex flex-col items-start gap-4 sm:-mt-16 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end">
-              <div className="flex size-24 shrink-0 items-center justify-center rounded-xl border-4 border-card bg-ink font-mono2 text-4xl font-semibold text-primary-foreground shadow-sm sm:size-32">
+              <div className="flex size-24 shrink-0 items-center justify-center rounded-full border-4 border-card bg-gradient-to-b from-slate-800 to-black font-mono2 text-3xl font-bold text-white shadow-xl sm:size-32 sm:text-4xl">
                 {initials}
               </div>
-              <div className="space-y-1 pt-2 sm:pt-0">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{user.name}</h1>
-                <div className="flex flex-wrap items-center gap-2 text-[14px] text-muted-foreground">
-                  <span className="flex items-center gap-1"><Briefcase className="size-4" /> {user.designation}</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span className="flex items-center gap-1"><Building2 className="size-4" /> {user.company}</span>
+              <div className="space-y-1.5 pt-2 sm:pt-0 sm:pb-1">
+                <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">{user.name}</h1>
+                <div className="flex flex-wrap items-center gap-2 text-[14px] text-muted-foreground font-medium">
+                  <span className="flex items-center gap-1.5"><Briefcase className="size-4" /> {user.designation}</span>
+                  <span className="hidden sm:inline text-border">•</span>
+                  <span className="flex items-center gap-1.5"><Building2 className="size-4" /> {user.company}</span>
                 </div>
               </div>
             </div>
-            <div className="flex shrink-0 gap-2">
+            <div className="flex shrink-0 gap-2 sm:pb-2">
               <StatusBadge label={user.status} tone={user.status === 'Active' ? 'green' : 'gray'} />
-              <div className="inline-flex items-center rounded-md border border-border bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
+              <div className="inline-flex items-center rounded-full border border-border bg-secondary/80 px-3 py-1 text-xs font-bold uppercase tracking-wider text-secondary-foreground shadow-sm">
                 {user.role}
               </div>
             </div>
           </div>
           
-          <div className="mt-8 flex flex-wrap gap-6 text-[14px]">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Hash className="size-4 text-sage" /> <span>{user.code}</span>
+          <div className="mt-8 flex flex-wrap gap-3 sm:gap-4 text-[13px]">
+            <div className="flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3.5 py-1.5 font-medium text-foreground transition-colors hover:bg-muted/60 cursor-default">
+              <Hash className="size-4 text-sage" /> {user.code}
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Mail className="size-4 text-sage" /> <span>{user.email}</span>
+            <div className="flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3.5 py-1.5 font-medium text-foreground transition-colors hover:bg-muted/60 cursor-default">
+              <Mail className="size-4 text-sage" /> {user.email}
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Phone className="size-4 text-sage" /> <span>{user.mobile}</span>
+            <div className="flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3.5 py-1.5 font-medium text-foreground transition-colors hover:bg-muted/60 cursor-default">
+              <Phone className="size-4 text-sage" /> {user.mobile}
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="flex gap-2 overflow-x-auto border-b border-border pb-px">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar border-b border-border pb-px">
         {[
           { id: 'overview', label: 'Overview', icon: Activity },
           { id: 'personal', label: 'Personal Info', icon: User },
@@ -286,12 +289,12 @@ export default function Profile() {
               </div>
               <div className="p-6">
                 {successMsg && (
-                  <div className="mb-4 rounded-md border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+                  <div className="mb-4 rounded-md border border-success-border bg-success-bg p-3 text-sm text-success flex items-center gap-2">
                     <CheckCircle2 className="size-4" /> {successMsg}
                   </div>
                 )}
                 {errorMsg && (
-                  <div className="mb-4 rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                  <div className="mb-4 rounded-md border border-destructive-border bg-destructive-bg p-3 text-sm text-destructive flex items-center gap-2">
                     <AlertCircle className="size-4" /> {errorMsg}
                   </div>
                 )}
@@ -396,12 +399,12 @@ export default function Profile() {
               </div>
               <div className="p-6">
                 {passSuccess && (
-                  <div className="mb-4 rounded-md border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+                  <div className="mb-4 rounded-md border border-success-border bg-success-bg p-3 text-sm text-success flex items-center gap-2">
                     <CheckCircle2 className="size-4" /> {passSuccess}
                   </div>
                 )}
                 {passError && (
-                  <div className="mb-4 rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                  <div className="mb-4 rounded-md border border-destructive-border bg-destructive-bg p-3 text-sm text-destructive flex items-center gap-2">
                     <AlertCircle className="size-4" /> {passError}
                   </div>
                 )}
@@ -465,7 +468,7 @@ export default function Profile() {
               ) : auditLogs.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground">No recent activity found.</div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto no-scrollbar">
                   <table className="w-full text-left text-sm">
                     <thead className="bg-secondary/50 text-muted-foreground">
                       <tr>

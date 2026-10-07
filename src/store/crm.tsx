@@ -251,18 +251,13 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     { id: 4, companyId: 'c1', time: '09:55', user: 'Priya Nair', module: 'Opportunity', action: 'Stage Change', record: 'OPP-3301' },
   ]);
 
-  const [notificationsState, setNotifications] = useState<AppNotification[]>([
-    { id: 1, companyId: 'c1', kind: 'task', title: 'New Task Assigned', body: 'Complete API integration', time: '2 min ago', read: false },
-    { id: 2, companyId: 'c1', kind: 'meeting', title: 'Meeting Tomorrow', body: 'Trident Auto Components · 10:30 AM', time: '1 hr ago', read: false },
-    { id: 3, companyId: 'c1', kind: 'alert', title: 'Task Overdue', body: 'Follow up with Falcon Packaging', time: 'Yesterday', read: false },
-    { id: 4, companyId: 'c1', kind: 'gps', title: 'Check-In Required', body: 'Start your workday to enable visits', time: 'Today 09:00', read: true },
-  ]);
+  const [notificationsState, setNotifications] = useState<AppNotification[]>([]);
 
   const login = useCallback(async (email: string, password: string) => {
     try {
       const res = await customFetch("http://localhost:8000/api/auth/login", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password: password.trim() }),
       });
       if (!res.ok) return "Incorrect email or password.";
       const data = await res.json();

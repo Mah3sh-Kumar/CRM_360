@@ -52,7 +52,7 @@ export default function GlobalSearch({ open, onClose, onNavigate }: {
           <kbd className="kicker rounded border border-border px-1.5 py-0.5 text-muted-foreground">ESC</kbd>
         </div>
         <div className="max-h-[46vh] overflow-y-auto p-2">
-          {!ql && <div className="p-6 text-center font-mono2 text-[11px] leading-relaxed text-muted-foreground">Type to search across CRM 360.<br />Press <b>Ctrl K</b> anywhere to reopen.</div>}
+          {!ql && <div className="p-6 text-center font-mono2 text-[11px] leading-relaxed text-muted-foreground">Type to search across VIREON.<br />Press <b>Ctrl K</b> anywhere to reopen.</div>}
           {ql && visible.length === 0 && <div className="p-6 text-center font-mono2 text-[11px] text-muted-foreground">No results for “{q}”.</div>}
           {visible.map(g => (
             <div key={g.label} className="mb-1">

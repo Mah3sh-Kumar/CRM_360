@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    /* CRM 360 Brand Theme (Indigo/Slate) for Unauthenticated / Login */
+    /* VIREON Brand Theme (Indigo/Slate) for Unauthenticated / Login */
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
     --card: 217 33% 17%;
@@ -44,6 +44,10 @@
     --info: 211 48% 34%;
     --info-bg: 213 53% 95%;
     --info-border: 212 40% 86%;
+
+    --purple: 262 83% 58%;
+    --purple-bg: 262 80% 95%;
+    --purple-border: 262 70% 85%;
 
     --neutral: 60 4% 40%;
     --neutral-bg: 60 14% 96%;
@@ -197,6 +201,46 @@
     --chart-4: 38 40% 75%;
     --chart-5: 38 30% 85%;
   }
+
+  html.dark,
+  html.dark [data-role] {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 217 33% 17%;
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 17%;
+    --popover-foreground: 210 40% 98%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 25% 27%;
+    --muted-foreground: 215 20% 65%;
+    --muted-bg: 222 47% 11%;
+    --border: 215 25% 27%;
+    --input: 215 25% 27%;
+    --neutral-bg: 222 47% 14%;
+    --neutral-border: 215 25% 27%;
+    --success: 140 75% 65%;
+    --success-bg: 140 75% 15%;
+    --success-border: 140 75% 25%;
+    
+    --warning: 44 68% 65%;
+    --warning-bg: 44 68% 15%;
+    --warning-border: 44 68% 25%;
+    
+    --info: 211 48% 65%;
+    --info-bg: 211 48% 15%;
+    --info-border: 211 48% 25%;
+    
+    --purple: 262 83% 75%;
+    --purple-bg: 262 80% 15%;
+    --purple-border: 262 70% 25%;
+    
+    --destructive: 4 72% 65%;
+    --destructive-bg: 4 72% 20%;
+    --destructive-border: 4 72% 30%;
+    
+    /* Keep primary and other unique role colors by NOT overriding them here */
+  }
 }
 
 @layer base {
@@ -221,5 +265,12 @@
     font-size: 0.625rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
