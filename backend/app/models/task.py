@@ -1,10 +1,14 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
 class Task(Base):
     __tablename__ = "tasks"
+    __table_args__ = (
+        Index('ix_task_related', 'company_id', 'related_module', 'related_record_id'),
+        Index('ix_task_status', 'company_id', 'status'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)

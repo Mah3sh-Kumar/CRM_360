@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import auth, companies, employees, customers, leads, accounts, contacts, opportunities, activities, tasks, meetings, tracking, visits, reports, audit, dashboard
+from app.routers import auth, companies, employees, customers, leads, accounts, contacts, opportunities, activities, tasks, meetings, tracking, visits, reports, audit, dashboard, profile
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -52,3 +52,4 @@ app.include_router(visits.router, prefix=f"{settings.API_V1_STR}/visits", tags=[
 app.include_router(reports.router, prefix=f"{settings.API_V1_STR}", tags=["reports"])
 app.include_router(audit.router, prefix=f"{settings.API_V1_STR}/audit", tags=["audit"])
 app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["dashboard"])
+app.include_router(profile.router, prefix=f"{settings.API_V1_STR}/profile", tags=["profile"])

@@ -3,9 +3,9 @@ import React from 'react';
 // (companies & employees tabs unchanged)
 import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, ImportExport, Mono, ErrorState } from '@/components/shared';
 import type { Tone } from '@/components/shared';
-import { fmtINR } from '@/data/mock';
+import { fmtINR } from '@/lib/utils';
 import { useCRM } from '@/store/crm';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle , DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -135,10 +135,9 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
   };
 
   if (tab === 'companies') return (
-    <div className="space-y-5 relative">
+    <div className="space-y-4 relative">
       <PageHeader kicker="Masters · Module 17" title="Companies"
-        sub="Primary organisational entity. Multi-company deployment with complete data isolation. Company Code must be unique."
-        action={<><ImportExport />{crm.can('CREATE', 'COMPANY') && <NewButton label="Create Company" onClick={() => setShowCompanyModal(true)} />}</>} />
+        action={<><ImportExport data={filteredCompanies} filename="companies" />{crm.can('CREATE', 'COMPANY') && <NewButton label="Create Company" onClick={() => setShowCompanyModal(true)} />}</>} />
       <Toolbar placeholder="Search companies, code, city..." searchValue={searchComp} onSearchChange={setSearchComp}>
         <FilterChip label="Active" active />
         <FilterChip label="Inactive" />
@@ -179,7 +178,8 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
 
       <Dialog open={showCompanyModal} onOpenChange={(isOpen) => !isOpen && !loading && setShowCompanyModal(false)}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Create Company</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Create Company</DialogTitle>
+          <DialogDescription className="sr-only">Please fill out or review the details below.</DialogDescription></DialogHeader>
           <form onSubmit={handleCompanySubmit} className="mt-2 space-y-4">
             {error && <div className="rounded-md bg-destructive/10 p-3 text-[12.5px] font-medium text-destructive">{error}</div>}
             <div>
@@ -211,10 +211,9 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
   );
 
   if (tab === 'employees') return (
-    <div className="space-y-5 relative">
+    <div className="space-y-4 relative">
       <PageHeader kicker="Masters · Module 18" title="Employees"
-        sub="Central user repository. Reporting manager defines hierarchy visibility. GPS tracking opt-in controls geo module access."
-        action={<><ImportExport />{crm.can('CREATE', 'EMPLOYEE') && <NewButton label="Create Employee" onClick={() => setShowEmpModal(true)} />}</>} />
+        action={<><ImportExport data={filteredEmployees} filename="employees" />{crm.can('CREATE', 'EMPLOYEE') && <NewButton label="Create Employee" onClick={() => setShowEmpModal(true)} />}</>} />
       <Toolbar placeholder="Search employees, code, email, role..." searchValue={searchEmp} onSearchChange={setSearchEmp}>
         <FilterChip label="All Companies" active />
         <FilterChip label="GPS Enabled" />
@@ -258,7 +257,8 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
 
       <Dialog open={showEmpModal} onOpenChange={(isOpen) => !isOpen && !loading && setShowEmpModal(false)}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Create Employee</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Create Employee</DialogTitle>
+          <DialogDescription className="sr-only">Please fill out or review the details below.</DialogDescription></DialogHeader>
           <form onSubmit={handleEmpSubmit} className="mt-2 space-y-4">
             {error && <div className="rounded-md bg-destructive/10 p-3 text-[12.5px] font-medium text-destructive">{error}</div>}
             <div className="grid grid-cols-2 gap-4">
@@ -327,10 +327,9 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
   );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHeader kicker="Masters · Module 19" title="Customers"
-        sub="Lifecycle: Prospect → Active → Inactive. Created directly or through lead conversion. Click a customer to open Customer 360."
-        action={<><ImportExport />{crm.can('CREATE', 'CUSTOMER') && <NewButton label="Create Customer" onClick={() => setShowCustModal(true)} />}</>} />
+        action={<><ImportExport data={filteredCustomers} filename="customers" />{crm.can('CREATE', 'CUSTOMER') && <NewButton label="Create Customer" onClick={() => setShowCustModal(true)} />}</>} />
       <Toolbar placeholder="Search customers, owner, email..." searchValue={searchCust} onSearchChange={setSearchCust}><FilterChip label="All Statuses" active /><FilterChip label="All Owners" /></Toolbar>
       {crm.error.customers ? (
         <ErrorState title="Failed to load customers" message={crm.error.customers} onRetry={crm.fetchCustomers} />
@@ -369,7 +368,8 @@ export default function Masters({ tab, onOpen }: { tab: 'companies' | 'employees
 
       <Dialog open={showCustModal} onOpenChange={(isOpen) => !isOpen && !loading && setShowCustModal(false)}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Create Customer</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Create Customer</DialogTitle>
+          <DialogDescription className="sr-only">Please fill out or review the details below.</DialogDescription></DialogHeader>
           <form onSubmit={handleCustSubmit} className="mt-2 space-y-4">
             {error && <div className="rounded-md bg-destructive/10 p-3 text-[12.5px] font-medium text-destructive">{error}</div>}
             <div className="grid grid-cols-2 gap-4">

@@ -2,8 +2,9 @@
 import { useState, useMemo } from 'react';
 import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, ImportExport, Mono, ErrorState } from '@/components/shared';
 import type { Tone } from '@/components/shared';
-import { leadSources, fmtINR } from '@/data/mock';
-import type { LeadStatus, Lead } from '@/data/mock';
+import { fmtINR } from '@/lib/utils';
+import { leadSources } from '@/types/models';
+import type { LeadStatus, Lead } from '@/types/models';
 import { useCRM } from '@/store/crm';
 import LeadModal from '@/components/LeadModal';
 
@@ -38,10 +39,9 @@ export default function Leads({ onOpen }: { onOpen: (id: string) => void }) {
   }, [pool, filter, search]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHeader kicker="CRM Operations · Module 21" title={mine ? 'My Leads' : 'Leads'}
-        sub="Lifecycle: New → Contacted → Qualified → Proposal Sent → Negotiation → Won. Won leads can be converted to Customer + Account from the detail view."
-        action={<><ImportExport /><NewButton label="Create Lead" onClick={() => setShowModal(true)} /></>} />
+        action={<><ImportExport data={rows} filename="leads" /><NewButton label="Create Lead" onClick={() => setShowModal(true)} /></>} />
       <Toolbar placeholder="Search lead name, company, phone…" searchValue={search} onSearchChange={setSearch}>
         {['All', ...stages].map(s => <FilterChip key={s} label={s} active={filter === s} onClick={() => setFilter(filter === s ? 'All' : s)} />)}
       </Toolbar>

@@ -1,7 +1,7 @@
 // src/pages/Accounts.tsx — store-backed + click-through
 import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, ImportExport, Mono, ErrorState } from '@/components/shared';
-import { fmtINR } from '@/data/mock';
-import type { Account } from '@/data/mock';
+import { fmtINR } from '@/lib/utils';
+import type { Account } from '@/types/models';
 import { useCRM } from '@/store/crm';
 import { useState, useMemo } from 'react';
 import AccountModal from '@/components/AccountModal';
@@ -30,10 +30,9 @@ export default function Accounts({ onOpen }: { onOpen: (id: string) => void }) {
   }, [pool, search]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHeader kicker="CRM Operations · Module 22" title={mine ? 'My Accounts' : 'Accounts'}
-        sub="Business entities created directly or via lead conversion. Click an account to open its 360° hub — contacts, opportunities, activities, tasks, meetings and visits in one place."
-        action={<><ImportExport /><NewButton label="Create Account" onClick={() => setShowModal(true)} /></>} />
+        action={<><ImportExport data={rows} filename="accounts" /><NewButton label="Create Account" onClick={() => setShowModal(true)} /></>} />
       <Toolbar placeholder="Search accounts, industry, city..." searchValue={search} onSearchChange={setSearch}>
         {/* Intentionally keeping filters as UI only since they are missing the actual data enum. 
             If there are specific ones, they can be implemented similar to leads. */}

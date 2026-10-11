@@ -149,8 +149,11 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     await fetchVisits();
   };
 
+  const trackingInitRef = React.useRef<string | null>(null);
+
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && trackingInitRef.current !== token) {
+      trackingInitRef.current = token;
       fetchTrackingStatus();
       fetchVisits();
     }

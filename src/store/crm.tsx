@@ -1,10 +1,37 @@
 // src/store/crm.tsx
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import {
-  employees as seedEmployees
-} from '@/data/mock';
-import type { Lead, Account, Customer, Contact, Opportunity, Visit, OppStage, Company, Employee, TrackPoint, Activity, Task } from '@/data/mock';
+import type { Lead, Account, Customer, Contact, Opportunity, Visit, OppStage, Company, Employee, TrackPoint, Activity, Task } from '@/types/models';
 import { can } from '@/auth/rbac';
+
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+const customFetch = async (url: string, options?: RequestInit) => {
+  const token = localStorage.getItem('crm_token');
+  const headers = new Headers(options?.headers || {});
+  
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  
+  if (options?.body && typeof options.body === 'string' && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  
+  // Replace hardcoded localhost API prefix with actual env API prefix
+  let cleanUrl = url.replace('http://localhost:8000/api', API_BASE_URL);
+  
+  try {
+    const res = await window.fetch(cleanUrl, { ...options, headers });
+    if (res.status === 401) {
+      localStorage.removeItem('crm_token');
+      window.dispatchEvent(new Event('auth:unauthorized'));
+    }
+    return res;
+  } catch (e) {
+    throw e;
+  }
+};
 
 export type Role = 'Super Admin' | 'Company Admin' | 'Manager' | 'Employee';
 
@@ -18,6 +45,9 @@ export interface SessionUser {
   company: string; 
   designation: string; 
   manager: string;
+  mobile: string;
+  status: string;
+  dateOfJoining: string;
 }
 
 export interface AuditEntry { id: number; companyId: string; time: string; user: string; module: string; action: string; record: string; }
@@ -56,6 +86,7 @@ export interface CRMStore {
   isInitializing: boolean;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   
   // RBAC Filtered Data
   companies: Company[]; employees: Employee[];
@@ -150,14 +181,14 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     const token = localStorage.getItem("crm_token");
     if (token) {
-      fetch("http://localhost:8000/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+      customFetch("http://localhost:8000/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
         .then(res => {
           if (!res.ok) throw new Error("Invalid token");
           return res.json();
         })
         .then(me => {
           if (me.id) {
-            setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—" });
+            setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—", mobile: me.mobile, status: me.status, dateOfJoining: me.date_of_joining });
           }
         })
         .catch(err => {
@@ -220,27 +251,22 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     { id: 4, companyId: 'c1', time: '09:55', user: 'Priya Nair', module: 'Opportunity', action: 'Stage Change', record: 'OPP-3301' },
   ]);
 
-  const [notificationsState, setNotifications] = useState<AppNotification[]>([
-    { id: 1, companyId: 'c1', kind: 'task', title: 'New Task Assigned', body: 'Complete API integration', time: '2 min ago', read: false },
-    { id: 2, companyId: 'c1', kind: 'meeting', title: 'Meeting Tomorrow', body: 'Trident Auto Components · 10:30 AM', time: '1 hr ago', read: false },
-    { id: 3, companyId: 'c1', kind: 'alert', title: 'Task Overdue', body: 'Follow up with Falcon Packaging', time: 'Yesterday', read: false },
-    { id: 4, companyId: 'c1', kind: 'gps', title: 'Check-In Required', body: 'Start your workday to enable visits', time: 'Today 09:00', read: true },
-  ]);
+  const [notificationsState, setNotifications] = useState<AppNotification[]>([]);
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const res = await fetch("http://localhost:8000/api/auth/login", {
+      const res = await customFetch("http://localhost:8000/api/auth/login", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password: password.trim() }),
       });
       if (!res.ok) return "Incorrect email or password.";
       const data = await res.json();
       localStorage.setItem("crm_token", data.access_token);
       
-      const meRes = await fetch("http://localhost:8000/api/auth/me", { headers: { Authorization: `Bearer ${data.access_token}` } });
+      const meRes = await customFetch("http://localhost:8000/api/auth/me", { headers: { Authorization: `Bearer ${data.access_token}` } });
       if (meRes.ok) {
         const me = await meRes.json();
-        setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—" });
+        setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—", mobile: me.mobile, status: me.status, dateOfJoining: me.date_of_joining });
         return null;
       }
       return "Failed to load user profile.";
@@ -251,6 +277,20 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("crm_token");
     setUser(null);
     setCheckIn({ checkedIn: false, since: null, fix: null, address: '' });
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem("crm_token");
+    if (!token) return;
+    try {
+      const meRes = await customFetch("http://localhost:8000/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+      if (meRes.ok) {
+        const me = await meRes.json();
+        setUser({ id: me.id.toString(), name: me.name, email: me.email, role: me.role as Role, code: me.employee_code, companyId: me.company_id ? me.company_id.toString() : "", company: me.company || "—", designation: me.designation || "—", manager: me.manager || "—", mobile: me.mobile, status: me.status, dateOfJoining: me.date_of_joining });
+      }
+    } catch (e) {
+      console.error("Failed to refresh user", e);
+    }
   }, []);
 
   const logAudit = useCallback((module: string, action: string, record: string) => {
@@ -269,8 +309,8 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const canFn = useCallback((action: import('@/auth/rbac').Action, module: import('@/auth/rbac').Module, record?: any) => {
-    return can(action, module, user, record, seedEmployees);
-  }, [user]);
+    return can(action, module, user, record, employeesState);
+  }, [user, employeesState]);
 
   const convertLead = useCallback((leadId: string, owner: string, customerStatus: 'Active' | 'Prospect') => {
     const lead = leadsState.find(l => l.id === leadId);
@@ -356,7 +396,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem("crm_token");
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:8000/api/companies/", {
+      const res = await customFetch("http://localhost:8000/api/companies/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -389,7 +429,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const createCompany = useCallback(async (data: Partial<Company>) => {
     try {
       const token = localStorage.getItem("crm_token");
-      const res = await fetch("http://localhost:8000/api/companies/", {
+      const res = await customFetch("http://localhost:8000/api/companies/", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -423,7 +463,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       if (data.city) payload.city = data.city;
       if (data.country) payload.country = data.country;
       
-      const res = await fetch(`http://localhost:8000/api/companies/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/companies/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -448,7 +488,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem("crm_token");
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:8000/api/employees/", {
+      const res = await customFetch("http://localhost:8000/api/employees/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -482,7 +522,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const createEmployee = useCallback(async (data: Partial<any>) => {
     try {
       const token = localStorage.getItem("crm_token");
-      const res = await fetch("http://localhost:8000/api/employees/", {
+      const res = await customFetch("http://localhost:8000/api/employees/", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -504,7 +544,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const updateEmployee = useCallback(async (id: string, data: Partial<any>) => {
     try {
       const token = localStorage.getItem("crm_token");
-      const res = await fetch(`http://localhost:8000/api/employees/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/employees/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -532,7 +572,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem("crm_token");
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:8000/api/customers/", {
+      const res = await customFetch("http://localhost:8000/api/customers/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -568,7 +608,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const createCustomer = useCallback(async (data: Partial<Customer> & { owner_id?: number, company_id?: number }) => {
     try {
       const token = localStorage.getItem("crm_token");
-      const res = await fetch("http://localhost:8000/api/customers/", {
+      const res = await customFetch("http://localhost:8000/api/customers/", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -609,7 +649,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       if (data.owner_id) payload.owner_id = data.owner_id;
       else if (data.owner) payload.owner_id = Number(data.owner);
 
-      const res = await fetch(`http://localhost:8000/api/customers/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/customers/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -634,7 +674,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem("crm_token");
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:8000/api/leads/", {
+      const res = await customFetch("http://localhost:8000/api/leads/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -667,7 +707,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const createLead = useCallback(async (data: Partial<Lead> & { owner_id?: number, company_id?: number }) => {
     try {
       const token = localStorage.getItem("crm_token");
-      const res = await fetch("http://localhost:8000/api/leads/", {
+      const res = await customFetch("http://localhost:8000/api/leads/", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -710,7 +750,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       if (data.owner_id) payload.assigned_employee_id = data.owner_id;
       else if (data.owner && !isNaN(Number(data.owner))) payload.assigned_employee_id = Number(data.owner);
 
-      const res = await fetch(`http://localhost:8000/api/leads/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/leads/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -735,7 +775,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem("crm_token");
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:8000/api/accounts/", {
+      const res = await customFetch("http://localhost:8000/api/accounts/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -771,7 +811,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const createAccount = useCallback(async (data: Partial<Account> & { owner_id?: number, company_id?: number }) => {
     try {
       const token = localStorage.getItem("crm_token");
-      const res = await fetch("http://localhost:8000/api/accounts/", {
+      const res = await customFetch("http://localhost:8000/api/accounts/", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -818,7 +858,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       if (data.owner_id) payload.owner_id = data.owner_id;
       else if (data.owner && !isNaN(Number(data.owner))) payload.owner_id = Number(data.owner);
 
-      const res = await fetch(`http://localhost:8000/api/accounts/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/accounts/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -844,7 +884,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem("crm_token");
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:8000/api/contacts/", {
+      const res = await customFetch("http://localhost:8000/api/contacts/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -892,7 +932,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         if (acc) accId = Number(acc.id);
       }
       
-      const res = await fetch("http://localhost:8000/api/contacts/", {
+      const res = await customFetch("http://localhost:8000/api/contacts/", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -946,7 +986,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         if (acc) payload.account_id = Number(acc.id);
       }
 
-      const res = await fetch(`http://localhost:8000/api/contacts/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/contacts/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -971,7 +1011,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem("crm_token");
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:8000/api/opportunities/", {
+      const res = await customFetch("http://localhost:8000/api/opportunities/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -1011,7 +1051,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         if (acc) accId = Number(acc.id);
       }
       
-      const res = await fetch("http://localhost:8000/api/opportunities/", {
+      const res = await customFetch("http://localhost:8000/api/opportunities/", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -1058,7 +1098,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         if (acc) payload.account_id = Number(acc.id);
       }
 
-      const res = await fetch(`http://localhost:8000/api/opportunities/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/opportunities/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -1085,7 +1125,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem("crm_token");
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:8000/api/activities/", {
+      const res = await customFetch("http://localhost:8000/api/activities/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -1128,7 +1168,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         if (emp) ownerId = Number(emp.id);
       }
 
-      const res = await fetch("http://localhost:8000/api/activities/", {
+      const res = await customFetch("http://localhost:8000/api/activities/", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -1173,7 +1213,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
         if (emp) payload.assigned_employee_id = Number(emp.id);
       }
 
-      const res = await fetch(`http://localhost:8000/api/activities/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/activities/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -1199,7 +1239,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('crm_token');
       if (!token) throw new Error("No token");
-      const res = await fetch('http://localhost:8000/api/tasks/', {
+      const res = await customFetch('http://localhost:8000/api/tasks/', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -1243,7 +1283,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
           assignId = Number(user?.id) || 1;
       }
 
-      const res = await fetch('http://localhost:8000/api/tasks/', {
+      const res = await customFetch('http://localhost:8000/api/tasks/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -1272,7 +1312,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       if (data.priority) payload.priority = data.priority;
       if (data.due) payload.due_date = new Date(data.due).toISOString();
       
-      const res = await fetch(`http://localhost:8000/api/tasks/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/tasks/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload)
@@ -1289,7 +1329,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const completeTask = useCallback(async (id: string, remarks?: string) => {
     try {
       const token = localStorage.getItem('crm_token');
-      const res = await fetch(`http://localhost:8000/api/tasks/${id}/complete`, {
+      const res = await customFetch(`http://localhost:8000/api/tasks/${id}/complete`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ completion_remarks: remarks || '' })
@@ -1306,7 +1346,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const cancelTask = useCallback(async (id: string) => {
     try {
       const token = localStorage.getItem('crm_token');
-      const res = await fetch(`http://localhost:8000/api/tasks/${id}/cancel`, {
+      const res = await customFetch(`http://localhost:8000/api/tasks/${id}/cancel`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
       });
@@ -1325,14 +1365,15 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('crm_token');
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:8000/api/meetings/", {
+      const res = await customFetch("http://localhost:8000/api/meetings/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         const mapped = data.map((m: any) => ({
+          ...m,
           id: m.id.toString(),
-          companyId: m.company_id.toString(),
+          companyId: m.company_id?.toString() || '',
           title: m.title,
           type: m.meeting_type,
           organizer: employeesState.find((e: any) => e.id.toString() === m.organizer_id.toString())?.name || m.organizer_id.toString(),
@@ -1361,7 +1402,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const createMeeting = useCallback(async (data: any) => {
     try {
       const token = localStorage.getItem('crm_token');
-      const res = await fetch("http://localhost:8000/api/meetings/", {
+      const res = await customFetch("http://localhost:8000/api/meetings/", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(data)
@@ -1378,7 +1419,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const updateMeeting = useCallback(async (id: string, data: any) => {
     try {
       const token = localStorage.getItem('crm_token');
-      const res = await fetch(`http://localhost:8000/api/meetings/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/meetings/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(data)
@@ -1395,7 +1436,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const completeMeeting = useCallback(async (id: string) => {
     try {
       const token = localStorage.getItem('crm_token');
-      const res = await fetch(`http://localhost:8000/api/meetings/${id}/complete`, {
+      const res = await customFetch(`http://localhost:8000/api/meetings/${id}/complete`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
       });
@@ -1411,7 +1452,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const cancelMeeting = useCallback(async (id: string) => {
     try {
       const token = localStorage.getItem('crm_token');
-      const res = await fetch(`http://localhost:8000/api/meetings/${id}/cancel`, {
+      const res = await customFetch(`http://localhost:8000/api/meetings/${id}/cancel`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
       });
@@ -1427,7 +1468,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const assignTask = useCallback(async (id: string, assigneeId: number) => {
     try {
       const token = localStorage.getItem('crm_token');
-      const res = await fetch(`http://localhost:8000/api/tasks/${id}/assign`, {
+      const res = await customFetch(`http://localhost:8000/api/tasks/${id}/assign`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ assigned_to_id: assigneeId })
@@ -1444,7 +1485,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const deleteTask = useCallback(async (id: string) => {
     try {
       const token = localStorage.getItem('crm_token');
-      const res = await fetch(`http://localhost:8000/api/tasks/${id}`, {
+      const res = await customFetch(`http://localhost:8000/api/tasks/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -1494,7 +1535,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const scopedConversions = useMemo(() => user?.role === 'Super Admin' ? conversionsState : conversionsState.filter(c => c.companyId === user?.companyId), [conversionsState, user]);
 
   const value = useMemo<CRMStore>(() => ({
-    user, isInitializing, login, logout, can: canFn,
+    user, isInitializing, login, logout, refreshUser, can: canFn,
     companies: scopedCompanies, employees: scopedEmployees,
     leads: scopedLeads, accounts: scopedAccounts, customers: scopedCustomers, 
     contacts: scopedContacts, opportunities: scopedOpps, activities: scopedActivities, tasks: scopedTasks, meetings: scopedMeetings, visits: scopedVisits, conversions: scopedConversions,
@@ -1513,7 +1554,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     fetchTasks, createTask, updateTask, completeTask, cancelTask, assignTask, deleteTask,
     fetchMeetings, createMeeting, updateMeeting, completeMeeting, cancelMeeting
   }), [
-    user, isInitializing, login, logout, canFn,
+    user, isInitializing, login, logout, refreshUser, canFn,
     scopedCompanies, scopedEmployees,
     scopedLeads, scopedAccounts, scopedCustomers, scopedContacts, scopedOpps, scopedActivities, scopedTasks, scopedMeetings, scopedVisits, scopedConversions,
     scopedTrackPoints,
@@ -1541,31 +1582,5 @@ export function useCRM(): CRMStore {
   return ctx;
 }
 
-// ---- RBAC (SRS access matrix) ----
-export function navAllowed(role: Role, page: string): boolean {
-  // Use our centralized RBAC logic for navigation as well
-  // For simplicity, map pages to modules
-  const moduleMap: Record<string, import('@/auth/rbac').Module> = {
-    'companies': 'COMPANY',
-    'employees': 'EMPLOYEE',
-    'customers': 'CUSTOMER',
-    'leads': 'LEAD',
-    'accounts': 'ACCOUNT',
-    'contacts': 'CONTACT',
-    'opportunities': 'OPPORTUNITY',
-    'activities': 'ACTIVITY',
-    'tasks': 'TASK',
-    'meetings': 'MEETING',
-    'tracking': 'TRACKING',
-    'visits': 'VISIT',
-    'audit-logs': 'AUDIT',
-  };
 
-  const module = moduleMap[page];
-  if (!module) return true; // Default allow for Dashboard, Reports, etc. if not strictly mapped here.
-
-  // Simulate a minimal context check for navigation
-  const mockUser: SessionUser = { role, name: '', email: '', code: '', companyId: '', company: '', designation: '', manager: '', id: '' };
-  return can('VIEW', module, mockUser, null, []);
-}
 

@@ -1,6 +1,6 @@
 import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, Mono, ErrorState } from '@/components/shared';
 import type { Tone } from '@/components/shared';
-import type { Activity } from '@/data/mock';
+import type { Activity } from '@/types/models';
 import { useCRM } from '@/store/crm';
 import { Phone, Mail, Footprints, MonitorPlay, Undo2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -27,9 +27,8 @@ export default function Activities() {
     return res;
   }, [activities, search]);
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHeader kicker="CRM Operations · Module 25" title="Activities"
-        sub="Every customer interaction logged chronologically — calls, emails, visits, demos and follow-ups."
         action={<NewButton label="Create Activity" onClick={() => setShowModal(true)} />} />
       <Toolbar placeholder="Search subject, account, owner..." searchValue={search} onSearchChange={setSearch}>
         <FilterChip label="All Types" active /><FilterChip label="Scheduled" /><FilterChip label="Completed" />

@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { DataTable, StatusBadge, Mono, LoadingState, ErrorState } from '@/components/shared';
 import { BackBar, DetailTabs, EmptyRow } from '@/pages/details/shared';
 import { useCRM } from '@/store/crm';
-import { activities, tasks, meetings, fmtINR } from '@/data/mock';
-import type { OppStage } from '@/data/mock';
+import { fmtINR } from '@/lib/utils';
+import type { OppStage } from '@/types/models';
 import { cn } from '@/lib/utils';
 
 const flow: OppStage[] = ['Prospecting', 'Qualification', 'Proposal', 'Negotiation', 'Won'];
@@ -24,15 +24,14 @@ export default function OpportunityDetail({ id, onBack }: { id: string; onBack: 
   if (crm.error.opportunities) return <ErrorState title="Failed to load opportunity" message={crm.error.opportunities} onRetry={crm.fetchOpportunities} />;
   if (!opp) return <div className="space-y-4"><EmptyRow text="Opportunity not found." /><button onClick={onBack} className="font-mono2 text-[11px] text-primary">← Back to Opportunities</button></div>;
 
-  const tks = tasks.filter(t => t.related === opp.code);
-  const acts = activities.filter(a => a.relatedTo === opp.account);
-  const mts = meetings.filter(m => m.account === opp.account);
+  const tks = crm.tasks.filter(t => t.related === opp.code);
+  const acts = crm.activities.filter(a => a.relatedTo === opp.account);
+  const mts = crm.meetings.filter(m => m.account === opp.account);
   const closed = opp.stage === 'Won' || opp.stage === 'Lost';
 
   return (
-    <div className="space-y-5 min-w-0">
+    <div className="space-y-4 min-w-0">
       <BackBar onBack={onBack} kicker={`Opportunities · ${opp.code}`} title={opp.name}
-        sub={`${opp.account} · owner ${opp.owner} · expected close ${opp.closeDate}`}
         badges={[<StatusBadge key="st" label={opp.stage} tone={opp.stage === 'Won' ? 'ink' : opp.stage === 'Lost' ? 'red' : 'blue'} />,
                  <StatusBadge key="pr" label={`${opp.probability}% probability`} tone={opp.probability >= 70 ? 'green' : opp.probability >= 30 ? 'amber' : 'gray'} />]}
         actions={!closed && crm.can('EDIT', 'OPPORTUNITY', opp) && (
@@ -43,19 +42,19 @@ export default function OpportunityDetail({ id, onBack }: { id: string; onBack: 
         )} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-4 shadow-sm">
           <div className="text-[12px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Expected Revenue</div>
           <div className="font-display text-[26px] font-bold text-foreground">{fmtINR(Number(opp.expectedRevenue))}</div>
           <div className="absolute right-[-10px] bottom-[-10px] text-primary/5 size-24">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12"></path><path d="M8 10h8"></path><path d="M8 14h8"></path></svg>
           </div>
         </div>
-        <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-4 shadow-sm">
           <div className="text-[12px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Weighted Forecast</div>
           <div className="font-display text-[26px] font-bold text-sage">{fmtINR(Number(opp.expectedRevenue) * Number(opp.probability) / 100)}</div>
           <div className="text-[11px] text-muted-foreground mt-1">Based on {opp.probability}% probability</div>
         </div>
-        <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-4 shadow-sm">
           <div className="text-[12px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Close Date</div>
           <div className="font-display text-[26px] font-bold text-foreground">{opp.closeDate}</div>
           <div className="absolute right-[-10px] bottom-[-10px] text-primary/5 size-24">
@@ -65,7 +64,7 @@ export default function OpportunityDetail({ id, onBack }: { id: string; onBack: 
       </div>
 
       {/* stage workflow */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
         <div className="text-[12px] font-medium tracking-wide text-muted-foreground uppercase mb-6 flex justify-between items-center">
           <span>Stage Workflow {closed && <span className="text-destructive font-semibold ml-2">— Closed</span>}</span>
           {!closed && opp.stage !== 'Won' && gate[flow[flow.indexOf(opp.stage) + 1] as OppStage] && (

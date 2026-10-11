@@ -3,7 +3,7 @@ import { Star, Paperclip, StickyNote } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import ContactModal from '@/components/ContactModal';
 import { useCRM } from '@/store/crm';
-import type { Contact } from '@/data/mock';
+import type { Contact } from '@/types/models';
 
 export default function Contacts() {
   const [showModal, setShowModal] = useState(false);
@@ -25,10 +25,9 @@ export default function Contacts() {
   }, [contacts, search]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHeader kicker="CRM Operations · Module 23" title="Contacts"
-        sub="People linked to accounts. Duplicate detection on email + mobile. Notes and attachments (PDF/DOCX/XLSX/JPG/PNG, max 10 MB) supported."
-        action={<><ImportExport /><NewButton label="Create Contact" onClick={() => setShowModal(true)} /></>} />
+        action={<><ImportExport data={rows} filename="contacts" /><NewButton label="Create Contact" onClick={() => setShowModal(true)} /></>} />
       <Toolbar placeholder="Search contacts, accounts, email..." searchValue={search} onSearchChange={setSearch} />
       {error.contacts ? (
         <ErrorState title="Failed to load contacts" message={error.contacts} onRetry={fetchContacts} />

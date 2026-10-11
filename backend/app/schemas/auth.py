@@ -22,6 +22,9 @@ class UserResponse(BaseModel):
     company: Optional[str]
     designation: str
     manager: Optional[str]
+    mobile: str
+    status: str
+    date_of_joining: str
 
     class Config:
         from_attributes = True

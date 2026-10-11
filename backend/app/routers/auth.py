@@ -81,5 +81,8 @@ def read_users_me(current_user: Employee = Depends(get_current_user)):
         company_id=current_user.company_id,
         company=company_name,
         designation=current_user.designation,
-        manager=manager_name
+        manager=manager_name,
+        mobile=current_user.mobile,
+        status=current_user.status,
+        date_of_joining=str(current_user.date_of_joining)
     )

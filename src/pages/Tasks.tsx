@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { PageHeader, DataTable, StatusBadge, Toolbar, FilterChip, NewButton, Mono, ErrorState } from '@/components/shared';
 import type { Tone } from '@/components/shared';
-import type { TaskStatus, TaskPriority } from '@/data/mock';
+import type { TaskStatus, TaskPriority } from '@/types/models';
 import { useCRM } from '@/store/crm';
 import TaskModal from '@/components/TaskModal';
 import ReassignTaskModal from '@/components/ReassignTaskModal';
@@ -62,9 +62,8 @@ export default function Tasks() {
   }, [tasks, f, search]);
   
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHeader kicker="CRM Operations · Module 26" title="Tasks"
-        sub="Lifecycle: Open → In Progress → Completed (or Cancelled). Reassignment retains previous assignee in history and notifies the new one."
         action={can('CREATE', 'TASK') && <NewButton label="Create Task" onClick={handleCreate} />} />
       
       <Toolbar placeholder="Search tasks, assignee, related..." searchValue={search} onSearchChange={setSearch}>

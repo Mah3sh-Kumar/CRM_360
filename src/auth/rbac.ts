@@ -1,4 +1,4 @@
-import type { SessionUser } from '@/store/crm';
+import type { SessionUser, Role } from '@/store/crm';
 
 export type Action = 'CREATE' | 'VIEW' | 'EDIT' | 'DELETE' | 'ASSIGN' | 'EXPORT' | 'ADMINISTRATE';
 export type Module = 'COMPANY' | 'EMPLOYEE' | 'CUSTOMER' | 'LEAD' | 'ACCOUNT' | 'CONTACT' | 'OPPORTUNITY' | 'ACTIVITY' | 'TASK' | 'MEETING' | 'VISIT' | 'TRACKING' | 'AUDIT' | 'REPORT';
@@ -155,4 +155,32 @@ export function getDataScope(module: Module, user: SessionUser | null, records: 
   });
 
   return scoped;
+}
+
+// ---- RBAC (SRS access matrix) ----
+export function navAllowed(role: Role, page: string): boolean {
+  // Use our centralized RBAC logic for navigation as well
+  // For simplicity, map pages to modules
+  const moduleMap: Record<string, Module> = {
+    'companies': 'COMPANY',
+    'employees': 'EMPLOYEE',
+    'customers': 'CUSTOMER',
+    'leads': 'LEAD',
+    'accounts': 'ACCOUNT',
+    'contacts': 'CONTACT',
+    'opportunities': 'OPPORTUNITY',
+    'activities': 'ACTIVITY',
+    'tasks': 'TASK',
+    'meetings': 'MEETING',
+    'tracking': 'TRACKING',
+    'visits': 'VISIT',
+    'audit-logs': 'AUDIT',
+  };
+
+  const module = moduleMap[page];
+  if (!module) return true; // Default allow for Dashboard, Reports, etc. if not strictly mapped here.
+
+  // Simulate a minimal context check for navigation
+  const mockUser = { role, name: '', email: '', code: '', companyId: '', company: '', designation: '', manager: '', id: '' } as SessionUser;
+  return can('VIEW', module, mockUser, null, []);
 }

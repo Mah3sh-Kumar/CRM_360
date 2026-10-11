@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Search, Funnel, Building2, Contact2, HandCoins, Users, CheckSquare, CalendarDays, ListChecks } from 'lucide-react';
 import { useCRM } from '@/store/crm';
-import { activities, tasks, meetings } from '@/data/mock';
 
 interface Item { id?: string; label: string; sub: string }
 interface Group { label: string; page: string; icon: React.ElementType; items: Item[] }
@@ -26,7 +25,7 @@ export default function GlobalSearch({ open, onClose, onNavigate }: {
   if (!open) return null;
 
   const ql = q.trim().toLowerCase();
-  const has = (s: string) => s.toLowerCase().includes(ql);
+  const has = (s?: string) => s ? s.toLowerCase().includes(ql) : false;
 
   const groups: Group[] = [
     { label: 'Leads', page: 'leads', icon: Funnel, items: ql ? crm.leads.filter(l => has(l.name) || has(l.company)).slice(0, 5).map(l => ({ id: l.id, label: l.name, sub: `${l.company} · ${l.status}` })) : [] },
@@ -34,9 +33,9 @@ export default function GlobalSearch({ open, onClose, onNavigate }: {
     { label: 'Customers', page: 'customers', icon: Contact2, items: ql ? crm.customers.filter(c => has(c.name)).slice(0, 5).map(c => ({ id: c.id, label: c.name, sub: `${c.city} · ${c.status}` })) : [] },
     { label: 'Contacts', page: 'contacts', icon: Users, items: ql ? crm.contacts.filter(c => has(c.name) || has(c.account)).slice(0, 5).map(c => ({ label: c.name, sub: `${c.title} · ${c.account}` })) : [] },
     { label: 'Opportunities', page: 'opportunities', icon: HandCoins, items: ql ? crm.opportunities.filter(o => has(o.name) || has(o.account)).slice(0, 5).map(o => ({ id: o.id, label: o.name, sub: `${o.stage} · ${o.code}` })) : [] },
-    { label: 'Tasks', page: 'tasks', icon: CheckSquare, items: ql ? tasks.filter(t => has(t.title)).slice(0, 4).map(t => ({ label: t.title, sub: `${t.assignee} · ${t.status}` })) : [] },
-    { label: 'Meetings', page: 'meetings', icon: CalendarDays, items: ql ? meetings.filter(m => has(m.title) || has(m.account)).slice(0, 4).map(m => ({ label: m.title, sub: `${m.account} · ${m.date}` })) : [] },
-    { label: 'Activities', page: 'activities', icon: ListChecks, items: ql ? activities.filter(a => has(a.subject)).slice(0, 4).map(a => ({ label: a.subject, sub: `${a.type} · ${a.status}` })) : [] },
+    { label: 'Tasks', page: 'tasks', icon: CheckSquare, items: ql ? crm.tasks.filter(t => has(t.title)).slice(0, 4).map(t => ({ label: t.title, sub: `${t.assignee} · ${t.status}` })) : [] },
+    { label: 'Meetings', page: 'meetings', icon: CalendarDays, items: ql ? crm.meetings.filter(m => has(m.title) || has(m.account)).slice(0, 4).map(m => ({ label: m.title, sub: `${m.account} · ${m.date}` })) : [] },
+    { label: 'Activities', page: 'activities', icon: ListChecks, items: ql ? crm.activities.filter(a => has(a.subject)).slice(0, 4).map(a => ({ label: a.subject, sub: `${a.type} · ${a.status}` })) : [] },
   ];
 
   const visible = groups.filter(g => g.items.length > 0);
@@ -53,7 +52,7 @@ export default function GlobalSearch({ open, onClose, onNavigate }: {
           <kbd className="kicker rounded border border-border px-1.5 py-0.5 text-muted-foreground">ESC</kbd>
         </div>
         <div className="max-h-[46vh] overflow-y-auto p-2">
-          {!ql && <div className="p-6 text-center font-mono2 text-[11px] leading-relaxed text-muted-foreground">Type to search across CRM 360.<br />Press <b>Ctrl K</b> anywhere to reopen.</div>}
+          {!ql && <div className="p-6 text-center font-mono2 text-[11px] leading-relaxed text-muted-foreground">Type to search across VIREON.<br />Press <b>Ctrl K</b> anywhere to reopen.</div>}
           {ql && visible.length === 0 && <div className="p-6 text-center font-mono2 text-[11px] text-muted-foreground">No results for “{q}”.</div>}
           {visible.map(g => (
             <div key={g.label} className="mb-1">

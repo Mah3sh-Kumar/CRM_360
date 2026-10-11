@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils';
 import { Search, Plus, Download, Upload, AlertCircle, FileQuestion } from 'lucide-react';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia, EmptyContent } from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
+export * from './ui/chart-card';
+export * from './ui/report-chart';
 
 export function PageHeader({ kicker, title, sub, action }: { kicker: string; title: string; sub?: string; action?: React.ReactNode }) {
   return (
@@ -74,9 +76,9 @@ export function NewButton({ label, onClick }: { label: string; onClick?: () => v
   );
 }
 
-export function IconBtn({ icon, title }: { icon: React.ReactNode; title: string }) {
+export function IconBtn({ icon, title, onClick }: { icon: React.ReactNode; title: string; onClick?: () => void }) {
   return (
-    <button aria-label={title} title={title} className="inline-flex size-8 items-center justify-center rounded-md border border-input bg-card text-muted-foreground hover:text-foreground transition-colors">
+    <button onClick={onClick} aria-label={title} title={title} className="inline-flex size-8 items-center justify-center rounded-md border border-input bg-card text-muted-foreground hover:text-foreground transition-colors">
       <span aria-hidden="true" className="flex items-center justify-center">{icon}</span>
     </button>
   );
@@ -88,11 +90,55 @@ export function Mono({ children, className }: { children: React.ReactNode; class
   return <span className={cn('font-mono2 text-[11.5px]', className)}>{children}</span>;
 }
 
-export function ImportExport() {
+export function ImportExport({ data, filename, onImport }: { data?: any[], filename?: string, onImport?: (file: File) => void }) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      alert("No data to export.");
+      return;
+    }
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => headers.map(h => {
+        const val = row[h];
+        if (val === null || val === undefined) return '""';
+        return `"${val.toString().replace(/"/g, '""')}"`;
+      }).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename ? `${filename}.csv` : 'export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (onImport) {
+        onImport(file);
+      } else {
+        alert(`Imported ${file.name} successfully! (Mocked)`);
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <>
-      <IconBtn icon={<Upload className="size-3.5" />} title="Import (.xlsx / .csv)" />
-      <IconBtn icon={<Download className="size-3.5" />} title="Export" />
+      <input type="file" accept=".csv,.xlsx" ref={fileInputRef} onChange={handleFileChange} className="hidden" style={{ display: 'none' }} />
+      <IconBtn icon={<Upload className="size-3.5" />} title="Import (.xlsx / .csv)" onClick={handleImportClick} />
+      <IconBtn icon={<Download className="size-3.5" />} title="Export" onClick={handleExport} />
     </>
   );
 }
@@ -128,7 +174,7 @@ export function ErrorState({ title = "Something went wrong", message = "An error
 
 export function EmptyState({ title = "No Results", description = "No data found.", icon = <FileQuestion />, action }: { title?: string; description?: string; icon?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <Empty>
+    <Empty className="animate-in fade-in zoom-in-95 duration-200">
       <EmptyHeader>
         <EmptyMedia variant="icon">{icon}</EmptyMedia>
         <EmptyTitle>{title}</EmptyTitle>
@@ -138,3 +184,27 @@ export function EmptyState({ title = "No Results", description = "No data found.
     </Empty>
   );
 }
+
+export { SkeletonKPI, SkeletonChart, SkeletonTable, SkeletonCard, SkeletonList } from './ui/skeletons';
+
+export function PremiumTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover text-popover-foreground border border-border shadow-md rounded-lg p-3 min-w-[120px] animate-in fade-in zoom-in-95 duration-200">
+        {label && <div className="text-muted-foreground font-mono2 text-[10.5px] mb-1">{label}</div>}
+        {payload.map((entry: any, index: number) => (
+          <div key={`item-${index}`} className="flex items-center justify-between gap-4 mt-1">
+            <div className="flex items-center gap-1.5">
+              <span className="size-2.5 rounded-[2px]" style={{ backgroundColor: entry.color || entry.payload.fill }} />
+              <span className="text-[12px] font-medium">{entry.name}</span>
+            </div>
+            <span className="font-mono2 text-[11.5px] font-semibold">{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
+export * from './ui/chart-card';

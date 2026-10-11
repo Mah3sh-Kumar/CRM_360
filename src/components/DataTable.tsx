@@ -57,7 +57,7 @@ export function DataTable<T>({
   // Legacy mode
   if (head && rows) {
     return (
-      <div className="overflow-x-auto rounded-lg border border-border bg-card relative">
+      <div className="overflow-x-auto no-scrollbar rounded-lg border border-border bg-card relative">
         {loading && (
           <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10 backdrop-blur-[1px]">
             <Spinner className="size-6 text-primary" />
@@ -127,7 +127,7 @@ export function DataTable<T>({
         case 'status':
         case 'text':
         default:
-          comp = String(valA).localeCompare(String(valB));
+          comp = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' });
           break;
       }
       return sortDesc ? -comp : comp;
@@ -166,12 +166,7 @@ export function DataTable<T>({
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      <div className="overflow-x-auto rounded-lg border border-border bg-card relative">
-        {loading && (
-          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10 backdrop-blur-[1px]">
-            <Spinner className="size-6 text-primary" />
-          </div>
-        )}
+      <div className="overflow-x-auto no-scrollbar rounded-lg border border-border bg-card relative">
         <table className="w-full text-[12.5px]">
           <thead>
             <tr className="border-b border-border bg-muted-bg">
@@ -211,10 +206,20 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody>
-            {!loading && paginatedData.length === 0 ? (
+            {loading ? (
+              [...Array(pageSize > 0 ? pageSize : 5)].map((_, i) => (
+                <tr key={`skeleton-${i}`} className="border-b border-border/60 last:border-0">
+                  {cols.map((_, j) => (
+                    <td key={`skeleton-td-${j}`} className="px-3.5 py-3.5 first:pl-4">
+                      <div className={cn("h-3 bg-muted-foreground/20 rounded-md", j === 0 ? "w-24" : j === cols.length - 1 ? "w-8 ml-auto" : "w-16")} />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : paginatedData.length === 0 ? (
               <tr>
                 <td colSpan={cols.length} className="p-8 text-center">
-                  <Empty>
+                  <Empty className="animate-in fade-in zoom-in-95 duration-200">
                     <EmptyHeader>
                       <EmptyMedia variant="icon"><FileQuestion aria-hidden="true" /></EmptyMedia>
                       <EmptyTitle>No Results</EmptyTitle>

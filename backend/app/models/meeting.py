@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Table
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Table, CheckConstraint, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -12,6 +12,10 @@ meeting_participants = Table(
 
 class Meeting(Base):
     __tablename__ = "meetings"
+    __table_args__ = (
+        CheckConstraint('end_datetime >= start_datetime', name='chk_meeting_time'),
+        Index('ix_meeting_related', 'company_id', 'related_module', 'related_record_id'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)

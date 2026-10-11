@@ -4,11 +4,11 @@ import { DataTable, StatusBadge, Mono, LoadingState, ErrorState } from '@/compon
 import type { Tone } from '@/components/shared';
 import { BackBar, DetailTabs, Field, EmptyRow } from '@/pages/details/shared';
 import { useCRM } from '@/store/crm';
-import { employees, activities, fmtINR } from '@/data/mock';
-import type { LeadStatus, Customer, Account } from '@/data/mock';
+import { fmtINR } from '@/lib/utils';
+import type { LeadStatus, Customer, Account } from '@/types/models';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle , DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
 const stages: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Negotiation', 'Won', 'Lost'];
@@ -37,9 +37,8 @@ export default function LeadDetail({ id, onBack, onNavigate }: {
   const history = crm.audit.filter(a => a.record === lead.code);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <BackBar onBack={onBack} kicker={`Leads · ${lead.code}`} title={lead.name}
-        sub={`${lead.company} · via ${lead.source} · owned by ${lead.owner}`}
         badges={[<StatusBadge key="s" label={lead.status} tone={tone(lead.status)} />, converted ? <StatusBadge key="c" label="Converted" tone="ink" /> : <></>]}
         actions={!converted && crm.can('EDIT', 'LEAD', lead) && (
           <button onClick={() => setShowConvert(true)}
@@ -85,14 +84,14 @@ export default function LeadDetail({ id, onBack, onNavigate }: {
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="kicker mb-3 text-muted-foreground">Related Activities</div>
             <div className="space-y-2.5">
-              {activities.filter(a => a.relatedTo === lead.company).map(a => (
+              {crm.activities.filter(a => a.relatedTo === lead.company).map(a => (
                 <div key={a.id} className="flex items-center gap-2 text-[12px]">
                   <StatusBadge label={a.type} tone="sage" />
                   <span className="truncate">{a.subject}</span>
                   <Mono className="ml-auto shrink-0 text-muted-foreground">{a.due.slice(5, 10)}</Mono>
                 </div>
               ))}
-              {activities.filter(a => a.relatedTo === lead.company).length === 0 && <EmptyRow text="No activities yet." />}
+              {crm.activities.filter(a => a.relatedTo === lead.company).length === 0 && <EmptyRow text="No activities yet." />}
             </div>
           </div>
         </div>
@@ -109,6 +108,7 @@ export default function LeadDetail({ id, onBack, onNavigate }: {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Convert Lead</DialogTitle>
+          <DialogDescription className="sr-only">Please fill out or review the details below.</DialogDescription>
           </DialogHeader>
           <div className="mt-2">
             <p className="text-[12.5px] text-muted-foreground">This will create a Customer, an Account and a conversion history entry. The lead will be marked Won.</p>
@@ -116,7 +116,7 @@ export default function LeadDetail({ id, onBack, onNavigate }: {
               <div>
                 <label className="mb-1.5 block text-[12.5px] font-medium text-muted-foreground">Account / Customer Owner</label>
                 <select value={owner} onChange={e => setOwner(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                  {employees.map(e => <option key={e.id} value={e.name}>{e.name} · {e.designation}</option>)}
+                  {crm.employees.map(e => <option key={e.id} value={e.name}>{e.name} · {e.designation}</option>)}
                 </select>
               </div>
               <div>
