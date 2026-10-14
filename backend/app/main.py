@@ -11,10 +11,27 @@ app = FastAPI(
 from app.core.audit import AuditMiddleware
 
 # Set all CORS enabled origins
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+if hasattr(settings, "CORS_ORIGINS") and settings.CORS_ORIGINS:
+    if isinstance(settings.CORS_ORIGINS, list):
+        origins.extend(settings.CORS_ORIGINS)
+    elif isinstance(settings.CORS_ORIGINS, str):
+        origins.extend([o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()])
+
+origins = list(dict.fromkeys(origins))
+
 app.add_middleware(AuditMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS if hasattr(settings, "CORS_ORIGINS") else ["http://localhost:3000", "http://localhost:5173"], 
+    allow_origins=origins,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

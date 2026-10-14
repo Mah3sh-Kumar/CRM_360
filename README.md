@@ -1,4 +1,4 @@
-# 🚀 VIREON - Comprehensive CRM System
+# 🚀 CRM360 - Comprehensive CRM System
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
@@ -8,7 +8,7 @@
 
 ## 📖 1. Project Overview
 
-VIREON is a full-featured Customer Relationship Management (CRM) platform
+CRM360 is a full-featured Customer Relationship Management (CRM) platform
 designed to streamline sales, marketing, and support processes. It provides
 advanced tools for managing leads, accounts, contacts, opportunities,
 activities, and tasks, alongside robust features like field force tracking,
@@ -17,13 +17,11 @@ attendance management, role-based access control, and comprehensive reporting.
 ## 🗂️ 2. Project Structure
 
 ```text
-CRM_KIMI/
-├── backend/          # FastAPI backend, tests, migrations
+CRM360/
+├── backend/          # FastAPI backend, migrations & database utilities
 ├── src/              # React frontend source code
 ├── public/           # Frontend static assets
-├── docs/             # Architecture and testing documentation
-├── reports/          # QA, UAT, security, and implementation reports
-└── scripts/          # Setup and database seeding utilities
+└── docs/             # Architecture documentation
 ```
 
 ## 🛠️ 3. Technology Stack
@@ -105,17 +103,7 @@ npm install
 npm run dev
 ```
 
-## 🧪 10. Running Tests
-
-Run the comprehensive backend test suite:
-
-```bash
-cd backend
-.\venv\Scripts\activate
-pytest tests/ -v -p no:warnings
-```
-
-## 🏗️ 11. Build Instructions
+## 🏗️ 10. Build Instructions
 
 To build the frontend for production:
 
@@ -123,10 +111,9 @@ To build the frontend for production:
 npm run build
 ```
 
-## 🔑 12. Default/Demo Accounts
+## 🔑 11. Default/Demo Accounts
 
-See [`TestLoginCredentials.md`](TestLoginCredentials.md) for full UAT and seeded
-credentials.
+Standard seeded accounts and credentials:
 
 | Role                 | Email                 | Password     |
 | -------------------- | --------------------- | ------------ |

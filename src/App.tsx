@@ -198,7 +198,7 @@ function Shell() {
             <Compass className="size-4.5 text-sidebar" strokeWidth={2.4} />
           </div>
           <div>
-            <div className="font-display text-[15px] font-semibold tracking-tight text-white leading-none">VIREON</div>
+            <div className="font-display text-[15px] font-semibold tracking-tight text-white leading-none">CRM360</div>
             <div className="kicker mt-1 text-sidebar-accent">{user.role}</div>
           </div>
           <button aria-label="Close menu" className="ml-auto flex size-7 items-center justify-center rounded-md text-sidebar-border hover:bg-white/10 md:hidden" onClick={() => setMobileNavOpen(false)}>
