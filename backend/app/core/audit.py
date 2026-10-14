@@ -24,6 +24,9 @@ audit_context: ContextVar[Dict[str, Any]] = ContextVar("audit_context", default=
 
 class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         ip_address = request.client.host if request.client else "127.0.0.1"
         if "x-forwarded-for" in request.headers:
             ip_address = request.headers["x-forwarded-for"].split(",")[0].strip()

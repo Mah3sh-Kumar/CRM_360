@@ -48,7 +48,7 @@ export default function Login() {
             <Compass className="size-6 text-white" strokeWidth={2.5} />
           </div>
           <div>
-            <div className="font-display text-2xl font-bold tracking-tight">VIREON</div>
+            <div className="font-display text-2xl font-bold tracking-tight">CRM360</div>
             <div className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase mt-0.5">Enterprise Edition</div>
           </div>
         </div>
